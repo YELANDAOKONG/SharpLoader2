@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace SharpLoader.Core.Java.Models;
+namespace SharpLoader.Core.Java;
 
 [StructLayout(LayoutKind.Sequential)]
 public struct JniEnv
