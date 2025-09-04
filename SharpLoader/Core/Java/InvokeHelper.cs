@@ -6,6 +6,7 @@ namespace SharpLoader.Core.Java;
 public sealed class InvokeHelper : IDisposable
 {
     private IntPtr _libraryHandle;
+    private bool _disposed;
 
     public InvokeHelper(string jvmPath)
     {
@@ -30,12 +31,16 @@ public sealed class InvokeHelper : IDisposable
 
     public void Dispose()
     {
+        if (_disposed) return;
+        
         if (_libraryHandle != IntPtr.Zero)
         {
             NativeLibrary.Free(_libraryHandle);
             _libraryHandle = IntPtr.Zero;
         }
+        
         GC.SuppressFinalize(this);
+        _disposed = true;
     }
 
     ~InvokeHelper() => Dispose();
