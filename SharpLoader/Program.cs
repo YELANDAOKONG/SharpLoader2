@@ -40,21 +40,37 @@ public static class Program
         
         IntPtr initArgsPtr = Marshal.AllocHGlobal(Marshal.SizeOf<JavaVmInitArgs>());
         Marshal.StructureToPtr(initArgs, initArgsPtr, false);
-        
-        // Create JavaVM
-        IntPtr jvm, envPtr;
-        InvokeHelper helper = new InvokeHelper(jvmPath);
-        var createJavaVmDelegate = helper.GetFunction<InvokeTable.JniCreateJavaVmDelegate>("JNI_CreateJavaVM");
-        createJavaVmDelegate(out jvm, out envPtr, initArgsPtr);
 
-        JniTable env = new JniTable(envPtr);
-        var agentMainClass = env.FunctionFindClass()(envPtr, Statics.JavaAgentClassName);
-        if (agentMainClass == IntPtr.Zero)
+        try
         {
-            throw new Exception("Java agent class not found");
-            Environment.Exit(-1);
-        }
+            // Create JavaVM
+            IntPtr jvm, envPtr;
+            InvokeHelper helper = new InvokeHelper(jvmPath);
+            var createJavaVmDelegate = helper.GetFunction<InvokeTable.JniCreateJavaVmDelegate>("JNI_CreateJavaVM");
+            createJavaVmDelegate(out jvm, out envPtr, initArgsPtr);
 
-        // TODO...
+            JniTable env = new JniTable(envPtr);
+            try
+            {
+                var agentMainClass = env.FunctionFindClass()(envPtr, Statics.JavaAgentClassName);
+                if (agentMainClass == IntPtr.Zero)
+                {
+                    throw new Exception("Java agent class not found");
+                    Environment.Exit(-1);
+                }
+
+                // TODO...
+            }
+            catch (Exception ex)
+            {
+                env.FunctionFatalError()(envPtr, ex.Message.ToString());
+                Environment.Exit(-255);
+            }
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(optionsPtr);
+            Marshal.FreeHGlobal(initArgsPtr);
+        }
     }
 }
