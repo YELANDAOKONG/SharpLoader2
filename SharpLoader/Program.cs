@@ -51,7 +51,8 @@ public static class Program
         var agentMainClass = env.FunctionFindClass()(envPtr, Statics.JavaAgentClassName);
         if (agentMainClass == IntPtr.Zero)
         {
-            throw new Exception("Agent class not found");
+            throw new Exception("Java agent class not found");
+            Environment.Exit(-1);
         }
 
         // TODO...
