@@ -17,10 +17,13 @@ public static class Program
         }
 
         // JavaVM Options
+        List<IntPtr> stringPointers = new();
         List<JavaVmOption> options = new();
         foreach (var arg in args)
         {
-            options.Add(new JavaVmOption { optionString = Marshal.StringToHGlobalAnsi(arg) });
+            var argPtr = Marshal.StringToHGlobalAnsi(arg);
+            stringPointers.Add(argPtr);
+            options.Add(new JavaVmOption { optionString = argPtr });
         }
         JavaVmOption[] optionArray = options.ToArray();
         
@@ -60,17 +63,31 @@ public static class Program
                 }
 
                 // TODO...
+                
             }
             catch (Exception ex)
             {
-                env.FunctionFatalError()(envPtr, ex.Message.ToString());
+                // TODO...
+                
                 Environment.Exit(-255);
             }
         }
         finally
         {
-            Marshal.FreeHGlobal(optionsPtr);
-            Marshal.FreeHGlobal(initArgsPtr);
+            foreach (var ptr in stringPointers)
+            {
+                Marshal.FreeHGlobal(ptr);
+            }
+            
+            if (optionsPtr != IntPtr.Zero)
+            {
+                Marshal.FreeHGlobal(optionsPtr);
+            }
+            
+            if (initArgsPtr != IntPtr.Zero)
+            {
+                Marshal.FreeHGlobal(initArgsPtr);
+            }
         }
     }
 }
