@@ -42,11 +42,17 @@ public static class Program
         Marshal.StructureToPtr(initArgs, initArgsPtr, false);
         
         // Create JavaVM
-        IntPtr jvm, env;
+        IntPtr jvm, envPtr;
         InvokeHelper helper = new InvokeHelper(jvmPath);
         var createJavaVmDelegate = helper.GetFunction<InvokeTable.JniCreateJavaVmDelegate>("JNI_CreateJavaVM");
-        createJavaVmDelegate(out jvm, out env, initArgsPtr);
+        createJavaVmDelegate(out jvm, out envPtr, initArgsPtr);
 
+        JniTable env = new JniTable(envPtr);
+        var agentMainClass = env.FunctionFindClass()(envPtr, Statics.JavaAgentClassName);
+        if (agentMainClass == IntPtr.Zero)
+        {
+            throw new Exception("Agent class not found");
+        }
 
         // TODO...
     }
