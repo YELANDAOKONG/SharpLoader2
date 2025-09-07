@@ -120,6 +120,7 @@ public static class Program
             IntPtr jvm, envPtr;
             InvokeHelper helper = new InvokeHelper(jvmPath);
             var createJavaVmDelegate = helper.GetFunction<InvokeTable.JniCreateJavaVmDelegate>("JNI_CreateJavaVM");
+            var destroyJavaVmDelegate = helper.GetFunction<InvokeTable.DestroyJavaVMDelegate>("JNI_DestroyJavaVM");
             createJavaVmDelegate(out jvm, out envPtr, initArgsPtr);
             
             Logger?.Info($"JVM Pointer: 0x{jvm:X}");
@@ -128,6 +129,104 @@ public static class Program
             JniTable env = new JniTable(envPtr);
             try
             {
+                var agentLoggerClass = env.FunctionFindClass()(envPtr, Statics.JavaAgentLoggerClassName);
+                if (agentLoggerClass == IntPtr.Zero)
+                {
+                    Logger?.Error("Java agent logger class not found");
+                    throw new Exception("Java agent logger class not found");
+                    return -255;
+                }
+
+                #region Register Native Logger Methods
+
+                // 创建全局引用
+                var globalLoggerClass = env.FunctionNewGlobalRef()(envPtr, agentLoggerClass);
+                if (globalLoggerClass == IntPtr.Zero)
+                {
+                    Logger?.Error("Failed to create global reference for Logger class");
+                    return -255;
+                }
+                Logger?.Info($"Created global reference for Logger class: 0x{globalLoggerClass:X}");
+                
+                var registerNatives = env.FunctionRegisterNatives();
+                var methodCount = 8;
+                
+                IntPtr methodsPtr = Marshal.AllocHGlobal(Marshal.SizeOf<JniNativeMethod>() * methodCount);
+                try
+                {
+                    unsafe
+                    {
+                        // 定义方法信息
+                        var methods = new (string name, string signature, IntPtr functionPtr)[]
+                        {
+                            ("all", "(Ljava/lang/String;)V",
+                                (IntPtr)(delegate* unmanaged<IntPtr, IntPtr, IntPtr, void>)&NativeAgentLogger_All),
+                            ("trace", "(Ljava/lang/String;)V",
+                                (IntPtr)(delegate* unmanaged<IntPtr, IntPtr, IntPtr, void>)&NativeAgentLogger_Trace),
+                            ("debug", "(Ljava/lang/String;)V",
+                                (IntPtr)(delegate* unmanaged<IntPtr, IntPtr, IntPtr, void>)&NativeAgentLogger_Debug),
+                            ("info", "(Ljava/lang/String;)V",
+                                (IntPtr)(delegate* unmanaged<IntPtr, IntPtr, IntPtr, void>)&NativeAgentLogger_Info),
+                            ("warn", "(Ljava/lang/String;)V",
+                                (IntPtr)(delegate* unmanaged<IntPtr, IntPtr, IntPtr, void>)&NativeAgentLogger_Warn),
+                            ("error", "(Ljava/lang/String;)V",
+                                (IntPtr)(delegate* unmanaged<IntPtr, IntPtr, IntPtr, void>)&NativeAgentLogger_Error),
+                            ("fatal", "(Ljava/lang/String;)V",
+                                (IntPtr)(delegate* unmanaged<IntPtr, IntPtr, IntPtr, void>)&NativeAgentLogger_Fatal),
+                            ("off", "(Ljava/lang/String;)V",
+                                (IntPtr)(delegate* unmanaged<IntPtr, IntPtr, IntPtr, void>)&NativeAgentLogger_Off)
+                        };
+                        
+                        // 填充方法结构
+                        for (int i = 0; i < methodCount; i++)
+                        {
+                            var nativeMethod = new JniNativeMethod
+                            {
+                                name = Marshal.StringToHGlobalAnsi(methods[i].name),
+                                signature = Marshal.StringToHGlobalAnsi(methods[i].signature),
+                                fnPtr = methods[i].functionPtr
+                            };
+
+                            Logger?.Info(
+                                $"Registering native method: {methods[i].name}, signature: {methods[i].signature}, ptr: 0x{methods[i].functionPtr:X}");
+
+                            Marshal.StructureToPtr(nativeMethod, methodsPtr + i * Marshal.SizeOf<JniNativeMethod>(),
+                                false);
+                        }
+
+                        // 注册本地方法
+                        int registerResult = registerNatives(envPtr, globalLoggerClass, methodsPtr, methodCount);
+                        if (registerResult != 0)
+                        {
+                            Logger?.Error($"Failed to register native methods, error code: {registerResult}");
+                            return -255;
+                        }
+                    }
+
+                    Logger?.Info("Successfully registered all native methods for Logger class");
+                }
+                finally
+                {
+                    // 释放方法名和签名内存
+                    for (int i = 0; i < methodCount; i++)
+                    {
+                        var method = Marshal.PtrToStructure<JniNativeMethod>(methodsPtr + i * Marshal.SizeOf<JniNativeMethod>());
+                        if (method != null) Marshal.FreeHGlobal(method.name);
+                        if (method != null) Marshal.FreeHGlobal(method.signature);
+                    }
+
+                    // 释放方法数组内存
+                    Marshal.FreeHGlobal(methodsPtr);
+
+                    // TODO...
+                    // 注意：全局引用需要在适当的时候释放，但通常是在程序退出前
+                    // env.FunctionDeleteGlobalRef()(envPtr, globalLoggerClass);
+                }
+                #endregion
+                
+                
+                
+
                 var agentMainClass = env.FunctionFindClass()(envPtr, Statics.JavaAgentClassName);
                 if (agentMainClass == IntPtr.Zero)
                 {
@@ -138,6 +237,10 @@ public static class Program
 
                 // TODO...
                 
+                
+                
+                _ = destroyJavaVmDelegate(jvm);
+                return 0;
             }
             catch (Exception ex)
             {
