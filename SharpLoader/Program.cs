@@ -440,19 +440,19 @@ public static class Program
                 _jvmExitEvent.WaitOne();
                 Logger?.Info("Java application has exited. Destroying JVM...");
 
-                try
-                {
-                    if (jvm != IntPtr.Zero)
-                    {
-                        var destroyResult = jvmInvoker.FunctionDestroyJavaVm()(jvm);
-                        Logger?.Info($"Destroyed JVM: 0x{destroyResult:X}");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Logger?.Error($"Error destroying JVM: {ex.Message}");
-                    Logger?.Trace($"Error destroying JVM: {ex.StackTrace}");
-                }
+                // try
+                // {
+                //     if (jvm != IntPtr.Zero)
+                //     {
+                //         var destroyResult = jvmInvoker.FunctionDestroyJavaVm()(jvm);
+                //         Logger?.Info($"Destroyed JVM: 0x{destroyResult:X}");
+                //     }
+                // }
+                // catch (Exception ex)
+                // {
+                //     Logger?.Error($"Error destroying JVM: {ex.Message}");
+                //     Logger?.Trace($"Error destroying JVM: {ex.StackTrace}");
+                // }
 
                 return 0;
             }
