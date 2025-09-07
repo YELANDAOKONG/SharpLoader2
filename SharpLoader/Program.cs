@@ -127,6 +127,7 @@ public static class Program
 
             JvmTable jvmInvoker = new JvmTable(jvm);
             JniTable env = new JniTable(envPtr);
+            JavaHelper java = new JavaHelper(jvm, envPtr);
             try
             {
                 var agentLoggerClass = env.FunctionFindClass()(envPtr, Statics.JavaAgentLoggerClassName);
@@ -226,32 +227,16 @@ public static class Program
 
                 #region Test Logger Methods
 
-                IntPtr testMethodPtr = IntPtr.Zero;
-                IntPtr signaturePtr = IntPtr.Zero;
-                try
+                var testMethodId = java.GetStaticMethodId(globalLoggerClass, "test", "()V");
+                if (testMethodId == IntPtr.Zero)
                 {
-                    var getStaticMethodId = env.FunctionGetStaticMethodID();
-                    testMethodPtr = Marshal.StringToHGlobalAnsi("test");
-                    signaturePtr = Marshal.StringToHGlobalAnsi("()V");
-                    var testMethodId = getStaticMethodId(envPtr, globalLoggerClass, testMethodPtr, signaturePtr);
-                    if (testMethodId == IntPtr.Zero)
-                    {
-                        Logger?.Error("Failed to find test method in Logger class");
-                        return -255;
-                    }
-
-                    Logger?.Info($"Found logger test method, method ID: 0x{testMethodId:X}");
-
-                    var callStaticVoidMethod = env.FunctionCallStaticVoidMethodA();
-                    callStaticVoidMethod(envPtr, globalLoggerClass, testMethodId, IntPtr.Zero);
-                    Logger?.Info("Successfully called logger test method");
+                    Logger?.Error("Failed to find test method in Logger class");
+                    return -255;
                 }
-                finally
-                {
-                    if (testMethodPtr != IntPtr.Zero) Marshal.FreeHGlobal(testMethodPtr);
-                    
-                    if (signaturePtr != IntPtr.Zero) Marshal.FreeHGlobal(signaturePtr);
-                }
+
+                Logger?.Info($"Found logger test method, method ID: 0x{testMethodId:X}");
+                java.CallStaticVoidMethodA(globalLoggerClass, testMethodId);
+                Logger?.Info("Successfully called logger test method");
                 
 
                 #endregion
