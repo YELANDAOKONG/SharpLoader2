@@ -41,7 +41,7 @@ public static class Program
         #endregion
         
         // Mods Directory
-        var modDirPath = Path.Combine(gameDirPath, "mods");
+        var modDirPath = Path.Combine(gameDirPath, "modules");
         if (!Directory.Exists(modDirPath))
         {
             Directory.CreateDirectory(modDirPath);
@@ -252,7 +252,7 @@ public static class Program
 
                 #region Register Native (Class Loader & Class Transformer)
 
-                
+                // TODO...
 
                 #endregion
                 
