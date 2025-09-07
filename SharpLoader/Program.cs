@@ -568,13 +568,13 @@ public static class Program
         try
         {
             var stringHelper = new JStringHelper(env);
-            
+        
             string? managedClassName = stringHelper.GetStringUtfChars(env, className);
             if (string.IsNullOrEmpty(managedClassName))
             {
                 return false;
             }
-            
+        
             return ModuleManager.ShouldModifyClass(env, clazz, managedClassName);
         }
         catch (Exception ex)
@@ -585,31 +585,63 @@ public static class Program
         }
     }
 
+
     [UnmanagedCallersOnly]
     public static IntPtr ModifyClassFile(IntPtr env, IntPtr clazz, IntPtr className, IntPtr classfileBuffer)
     {
+        JniTable table = new JniTable(env);
         try
         {
-            JniTable table = new JniTable(env);
+            // Check for pending exception
+            if (table.FunctionExceptionCheck()(env))
+            {
+                table.FunctionExceptionDescribe()(env);
+                table.FunctionExceptionClear()(env);
+                return classfileBuffer;
+            }
+
             var stringHelper = new JStringHelper(env);
             
-            // Convert a Java string to a C# string
             string? managedClassName = stringHelper.GetStringUtfChars(env, className);
             if (string.IsNullOrEmpty(managedClassName))
             {
                 return classfileBuffer;
             }
+
+            // Check for exception after string operation
+            if (table.FunctionExceptionCheck()(env))
+            {
+                table.FunctionExceptionDescribe()(env);
+                table.FunctionExceptionClear()(env);
+                return classfileBuffer;
+            }
             
-            // Get the original byte array length
             int bufferLength = table.FunctionGetArrayLength()(env, classfileBuffer);
+            if (table.FunctionExceptionCheck()(env))
+            {
+                table.FunctionExceptionDescribe()(env);
+                table.FunctionExceptionClear()(env);
+                return classfileBuffer;
+            }
+
             byte[] managedBuffer = new byte[bufferLength];
             
-            // Copy Java byte array to managed array
             IntPtr bufferElements = table.FunctionGetByteArrayElements()(env, classfileBuffer, IntPtr.Zero);
+            if (bufferElements == IntPtr.Zero)
+            {
+                return classfileBuffer;
+            }
+            if (table.FunctionExceptionCheck()(env))
+            {
+                table.FunctionReleaseByteArrayElements()(env, classfileBuffer, bufferElements, 0);
+                table.FunctionExceptionDescribe()(env);
+                table.FunctionExceptionClear()(env);
+                return classfileBuffer;
+            }
+
             Marshal.Copy(bufferElements, managedBuffer, 0, bufferLength);
             table.FunctionReleaseByteArrayElements()(env, classfileBuffer, bufferElements, 0);
             
-            // Call ModuleManager's static method
             byte[]? modifiedBuffer = ModuleManager.ModifyClassFile(env, clazz, managedClassName, managedBuffer);
             if (modifiedBuffer == null || modifiedBuffer.Length == 0)
             {
@@ -617,11 +649,31 @@ public static class Program
             }
             Logger?.Debug($"[Modified Class] {managedClassName} (Size {managedBuffer.Length}Byte -> {modifiedBuffer.Length}Byte)");
             
-            // Create a new Java byte array and return it
             IntPtr resultArray = table.FunctionNewByteArray()(env, modifiedBuffer.Length);
-            
-            // Copy the modified data to the Java array
+            if (resultArray == IntPtr.Zero)
+            {
+                return classfileBuffer;
+            }
+            if (table.FunctionExceptionCheck()(env))
+            {
+                table.FunctionExceptionDescribe()(env);
+                table.FunctionExceptionClear()(env);
+                return classfileBuffer;
+            }
+
             IntPtr resultElements = table.FunctionGetByteArrayElements()(env, resultArray, IntPtr.Zero);
+            if (resultElements == IntPtr.Zero)
+            {
+                return classfileBuffer;
+            }
+            if (table.FunctionExceptionCheck()(env))
+            {
+                table.FunctionReleaseByteArrayElements()(env, resultArray, resultElements, 0);
+                table.FunctionExceptionDescribe()(env);
+                table.FunctionExceptionClear()(env);
+                return classfileBuffer;
+            }
+
             Marshal.Copy(modifiedBuffer, 0, resultElements, modifiedBuffer.Length);
             table.FunctionReleaseByteArrayElements()(env, resultArray, resultElements, 0);
             

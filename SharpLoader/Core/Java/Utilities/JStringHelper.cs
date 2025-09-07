@@ -21,10 +21,11 @@ public class JStringHelper
         if (env == IntPtr.Zero || jstring == IntPtr.Zero)
             return string.Empty;
         
+        IntPtr stringPtr = IntPtr.Zero;
         try
         {
             var getStringUtfChars = _jniTable.FunctionGetStringUTFChars();
-            var stringPtr = getStringUtfChars(env, jstring, IntPtr.Zero);
+            stringPtr = getStringUtfChars(env, jstring, IntPtr.Zero);
             if (stringPtr == IntPtr.Zero)
                 return string.Empty;
             
@@ -32,9 +33,13 @@ public class JStringHelper
             var result = Marshal.PtrToStringUTF8(stringPtr, stringLength);
             return result ?? string.Empty;
         }
-        catch (Exception ex)
+        finally
         {
-            return null;
+            if (stringPtr != IntPtr.Zero)
+            {
+                var releaseStringUtfChars = _jniTable.FunctionReleaseStringUTFChars();
+                releaseStringUtfChars(env, jstring, stringPtr);
+            }
         }
     }
 
@@ -55,5 +60,4 @@ public class JStringHelper
         var getStringUtfLength = _jniTable.FunctionGetStringUTFLength();
         return getStringUtfLength(env, jstring);
     }
-
 }
