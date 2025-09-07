@@ -4,8 +4,10 @@ using SharpLoader.Core.Java;
 using SharpLoader.Core.Java.Models;
 using SharpLoader.Core.Java.Models.Wrappers;
 using SharpLoader.Core.Java.Utilities;
+using SharpLoader.Core.Modding;
 using SharpLoader.Utilities;
 using SharpLoader.Utilities.Logger;
+using Spectre.Console;
 
 namespace SharpLoader;
 
@@ -252,7 +254,49 @@ public static class Program
 
                 #region Register Native (Class Loader & Class Transformer)
 
-                // TODO...
+                var nativeMethodsClass = java.FindClass(Statics.JavaAgentNativeMethodsClassName);
+                if (nativeMethodsClass == IntPtr.Zero)
+                {
+                    Logger?.Error("Java Native Methods class not found");
+                    return -255;
+                }
+
+                var globalNativeMethodsClass = java.NewGlobalRef(nativeMethodsClass);
+                if (globalNativeMethodsClass == IntPtr.Zero)
+                {
+                    Logger?.Error("Failed to create global reference for NativeMethods class");
+                    return -255;
+                }
+                globalRefs.Add(globalNativeMethodsClass);
+                
+                JniNativeMethodWrapped[] nativeMethodsWrapped;
+                unsafe
+                {
+                    nativeMethodsWrapped = new JniNativeMethodWrapped[]
+                    {
+                        new JniNativeMethodWrapped
+                        {
+                            Name = "shouldModifyClass",
+                            Signature = "(Ljava/lang/String;)Z",
+                            FunctionPtr = (IntPtr)(delegate* unmanaged<IntPtr, IntPtr, IntPtr, bool>)&ShouldModifyClass
+                        },
+                        new JniNativeMethodWrapped
+                        {
+                            Name = "modifyClassFile",
+                            Signature = "(Ljava/lang/String;[B)[B",
+                            FunctionPtr = (IntPtr)(delegate* unmanaged<IntPtr, IntPtr, IntPtr, IntPtr, IntPtr>)&ModifyClassFile
+                        }
+                    };
+                }
+
+                int nativeMethodsRegisterResult = java.RegisterNativeMethods(globalNativeMethodsClass, nativeMethodsWrapped);
+                if (nativeMethodsRegisterResult != 0)
+                {
+                    Logger?.Error($"Failed to register native methods for NativeMethods class, error code: {nativeMethodsRegisterResult}");
+                    return -255;
+                }
+
+                Logger?.Info("Successfully registered all native methods for NativeMethods class");
 
                 #endregion
                 
@@ -267,6 +311,8 @@ public static class Program
 
                 // TODO...
                 
+                Logger?.All("Please press enter to continue...");
+                Console.ReadLine();
                 
                 var destroyResult = jvmInvoker.FunctionDestroyJavaVm()(jvm);
                 Logger?.Info($"Destroyed JVM: 0x{destroyResult:X}");
@@ -375,5 +421,83 @@ public static class Program
     }
     
     #endregion
+
+    #region Native Class Loader
+
+    [UnmanagedCallersOnly]
+    public static bool ShouldModifyClass(IntPtr env, IntPtr clazz, IntPtr className)
+    {
+        try
+        {
+            var stringHelper = new JStringHelper(env);
+            
+            string? managedClassName = stringHelper.GetStringUtfChars(env, className);
+            if (string.IsNullOrEmpty(managedClassName))
+            {
+                return false;
+            }
+            
+            return ModuleManager.ShouldModifyClass(env, clazz, managedClassName);
+        }
+        catch (Exception ex)
+        {
+            Logger?.Error($"Error in ShouldModifyClass: {ex.Message}");
+            if (ex.StackTrace != null) Logger?.Trace(ex.StackTrace);
+            return false;
+        }
+    }
+
+    [UnmanagedCallersOnly]
+    public static IntPtr ModifyClassFile(IntPtr env, IntPtr clazz, IntPtr className, IntPtr classfileBuffer)
+    {
+        try
+        {
+            JniTable table = new JniTable(env);
+            var stringHelper = new JStringHelper(env);
+            
+            // Convert a Java string to a C# string
+            string? managedClassName = stringHelper.GetStringUtfChars(env, className);
+            if (string.IsNullOrEmpty(managedClassName))
+            {
+                return classfileBuffer;
+            }
+            
+            // Get the original byte array length
+            int bufferLength = table.FunctionGetArrayLength()(env, classfileBuffer);
+            byte[] managedBuffer = new byte[bufferLength];
+            
+            // Copy Java byte array to managed array
+            IntPtr bufferElements = table.FunctionGetByteArrayElements()(env, classfileBuffer, IntPtr.Zero);
+            Marshal.Copy(bufferElements, managedBuffer, 0, bufferLength);
+            table.FunctionReleaseByteArrayElements()(env, classfileBuffer, bufferElements, 0);
+            
+            // Call ModuleManager's static method
+            byte[]? modifiedBuffer = ModuleManager.ModifyClassFile(env, clazz, managedClassName, managedBuffer);
+            if (modifiedBuffer == null || modifiedBuffer.Length == 0)
+            {
+                return classfileBuffer;
+            }
+            Logger?.Debug($"[Modified Class] {managedClassName} (Size {managedBuffer.Length}Byte -> {modifiedBuffer.Length}Byte)");
+            
+            // Create a new Java byte array and return it
+            IntPtr resultArray = table.FunctionNewByteArray()(env, modifiedBuffer.Length);
+            
+            // Copy the modified data to the Java array
+            IntPtr resultElements = table.FunctionGetByteArrayElements()(env, resultArray, IntPtr.Zero);
+            Marshal.Copy(modifiedBuffer, 0, resultElements, modifiedBuffer.Length);
+            table.FunctionReleaseByteArrayElements()(env, resultArray, resultElements, 0);
+            
+            return resultArray;
+        }
+        catch (Exception ex)
+        {
+            Logger?.Error($"Error in ModifyClassFile: {ex.Message}");
+            if (ex.StackTrace != null) Logger?.Trace(ex.StackTrace);
+            return classfileBuffer;
+        }
+    }
+
+    #endregion
+
     
 }

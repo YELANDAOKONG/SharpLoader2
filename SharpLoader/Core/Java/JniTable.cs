@@ -354,6 +354,21 @@ public class JniTable
     [UnmanagedFunctionPointer(JniVersion.Convention)]
     public delegate void SetObjectArrayElement(IntPtr env, IntPtr array, int index, IntPtr val);
     public SetObjectArrayElement FunctionSetObjectArrayElement() => Function<SetObjectArrayElement>(Table.SetObjectArrayElement);
+    
+
+    // Byte array operations
+    [UnmanagedFunctionPointer(JniVersion.Convention)]
+    public delegate IntPtr GetByteArrayElements(IntPtr env, IntPtr array, IntPtr isCopy);
+    public GetByteArrayElements FunctionGetByteArrayElements() => Function<GetByteArrayElements>(Table.GetByteArrayElements);
+
+    [UnmanagedFunctionPointer(JniVersion.Convention)]
+    public delegate void ReleaseByteArrayElements(IntPtr env, IntPtr array, IntPtr elems, int mode);
+    public ReleaseByteArrayElements FunctionReleaseByteArrayElements() => Function<ReleaseByteArrayElements>(Table.ReleaseByteArrayElements);
+
+    [UnmanagedFunctionPointer(JniVersion.Convention)]
+    public delegate IntPtr NewByteArray(IntPtr env, int length);
+    public NewByteArray FunctionNewByteArray() => Function<NewByteArray>(Table.NewByteArray);
+
 
     // Primitive array creation
     [UnmanagedFunctionPointer(JniVersion.Convention)]
