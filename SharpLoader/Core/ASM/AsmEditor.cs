@@ -36,4 +36,10 @@ public class AsmEditor
     // TODO...
 
     #endregion
+    
+    #region Functions （Low-Level）
+
+    // TODO...
+
+    #endregion
 }
