@@ -125,6 +125,7 @@ public static class Program
             Logger?.Info($"JVM Pointer: 0x{jvm:X}");
             Logger?.Info($"Env Pointer: 0x{envPtr:X}");
 
+            JvmTable jvmInvoker = new JvmTable(jvm);
             JniTable env = new JniTable(envPtr);
             try
             {
@@ -267,7 +268,8 @@ public static class Program
                 // TODO...
                 
                 
-                // TODO: Destroy JVM
+                var destroyResult = jvmInvoker.FunctionDestroyJavaVm()(jvm);
+                Logger?.Info($"Destroyed JVM: 0x{destroyResult:X}");
                 return 0;
             }
             catch (Exception ex)
