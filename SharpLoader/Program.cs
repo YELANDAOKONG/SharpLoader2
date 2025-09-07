@@ -16,6 +16,10 @@ public static class Program
     public static LoggerService? Logger { get; private set; } = null;
     public static LoggerService? AgentLogger { get; private set; } = null;
     
+    private static ManualResetEvent _jvmExitEvent = new ManualResetEvent(false);
+    private static int _exitCode = 0;
+    
+    
     public static int Main(string[] args)
     {
         Console.WriteLine("[+] Hello, World!");
@@ -285,7 +289,13 @@ public static class Program
                             Name = "modifyClassFile",
                             Signature = "(Ljava/lang/String;[B)[B",
                             FunctionPtr = (IntPtr)(delegate* unmanaged<IntPtr, IntPtr, IntPtr, IntPtr, IntPtr>)&ModifyClassFile
-                        }
+                        },
+                        new JniNativeMethodWrapped
+                        {
+                            Name = "notifyExit",
+                            Signature = "(I)V",
+                            FunctionPtr = (IntPtr)(delegate* unmanaged<IntPtr, IntPtr, int, void>)&NotifyExit
+                        },
                     };
                 }
 
@@ -335,10 +345,19 @@ public static class Program
                 }
                 
                 
+                // Logger?.All("Please press enter to continue...");
+                // Console.ReadLine();
                 
-                // TODO: Wait JVM...
-                Logger?.All("Please press enter to continue...");
-                Console.ReadLine();
+                Console.CancelKeyPress += (sender, e) =>
+                {
+                    Logger?.Info("Received Ctrl+C, initiating shutdown...");
+                    e.Cancel = true;
+                    _jvmExitEvent.Set();
+                };
+                
+                Logger?.Info("Java application started. Waiting for exit signal...");
+                _jvmExitEvent.WaitOne();
+                Logger?.Info("Java application has exited. Destroying JVM...");
                 
                 var destroyResult = jvmInvoker.FunctionDestroyJavaVm()(jvm);
                 Logger?.Info($"Destroyed JVM: 0x{destroyResult:X}");
@@ -525,5 +544,24 @@ public static class Program
 
     #endregion
 
+    #region Native Methods
+
+    [UnmanagedCallersOnly]
+    public static void NotifyExit(IntPtr env, IntPtr clazz, int exitCode)
+    {
+        try
+        {
+            Logger?.Info($"Java application exited with code: {exitCode}");
+            _exitCode = exitCode;
+            _jvmExitEvent.Set();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[!] Error in NotifyExit: {ex.Message}");
+        }
+    }
+
+
+    #endregion
     
 }
