@@ -28,6 +28,7 @@
 
     <ItemGroup>
       <Folder Include="Core\Minecraft\Mapping\" />
+      <Folder Include="Core\Modding\" />
     </ItemGroup>
 
 </Project>

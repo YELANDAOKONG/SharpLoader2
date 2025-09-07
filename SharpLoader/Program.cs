@@ -80,6 +80,8 @@ public static class Program
         AgentLogger?.Info("Hello, World!");
 
         #endregion
+
+        #region JavaVM Options
         
         // JavaVM Options
         List<IntPtr> stringPointers = new();
@@ -113,7 +115,10 @@ public static class Program
         Logger?.Info($"Options: {optionArray.Length}");
         Logger?.Info($"Options Pointer: 0x{optionsPtr:X}");
         Logger?.Info($"InitArgs Pointer: 0x{initArgsPtr:X}");
+        
+        #endregion
 
+        List<IntPtr> globalRefs = new();
         try
         {
             // Create JavaVM
@@ -148,6 +153,7 @@ public static class Program
                     Logger?.Error("Failed to create global reference for Logger class");
                     return -255;
                 }
+                globalRefs.Add(globalLoggerClass);
 
                 JniNativeMethodWrapped[] methodsWrapped;
                 unsafe
@@ -242,6 +248,12 @@ public static class Program
                 java.CallStaticVoidMethodA(globalLoggerClass, testArgMethodId, [testArgs]);
                 Logger?.Info("Successfully called logger test method with arguments");
                 
+                #endregion
+
+                #region Register Native (Class Loader & Class Transformer)
+
+                
+
                 #endregion
                 
 
