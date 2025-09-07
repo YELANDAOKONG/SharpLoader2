@@ -1,9 +1,13 @@
+using SharpLoader.Core.Modding;
+using SharpLoader.Utilities;
+
 namespace SharpLoader.Modding;
 
 public interface IModule
 {
     bool Setup(IntPtr jvm, IntPtr env);
-    void Initialize();
+
+    void Initialize(ModuleManager manager, LoggerService? logger) { }
 
     #region Classes
 

@@ -17,6 +17,7 @@ public class ModuleManager
     public static ModuleManager? Instance { get; set; }
     
     public LoggerService? Logger { get; private set; }
+    public LoggerService? ModulesLogger { get; private set; }
     public IntPtr Jvm { get; private set; }
     public IntPtr Env { get; private set; }
     
@@ -30,6 +31,7 @@ public class ModuleManager
     public ModuleManager(LoggerService? logger, IntPtr jvm, IntPtr env)
     {
         Logger = logger;
+        ModulesLogger = logger?.CreateSubModule("Modules");
         Jvm = jvm;
         Env = env;
         Instance = this;
@@ -197,7 +199,7 @@ public class ModuleManager
             }
             
             // 初始化模组
-            module.Initialize();
+            module.Initialize(this, ModulesLogger?.CreateSubModule(profile.Id, false));
             
             // 注册模组
             _loadedModules.Add(module);
