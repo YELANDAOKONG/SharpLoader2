@@ -2,6 +2,7 @@ namespace SharpLoader;
 
 public class Statics
 {
+    public const string ModuleManifestFile = "sharp.json";
     public const string LoggerModuleName = "SharpLoader";
     
     
