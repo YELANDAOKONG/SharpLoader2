@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using SharpLoader.Core.Java.Models;
+using SharpLoader.Core.Java.Models.Wrappers;
 
 namespace SharpLoader.Core.Java.Utilities;
 
@@ -71,6 +72,62 @@ public class JavaHelper
             }
         }
     }
+
+    public IntPtr NewGlobalRef(IntPtr obj)
+    {
+        return Env.FunctionNewGlobalRef()(EnvHandle, obj);
+    }
+
+    public void DeleteGlobalRef(IntPtr globalRef)
+    {
+        Env.FunctionDeleteGlobalRef()(EnvHandle, globalRef);
+    }
+
+    public unsafe int RegisterNativeMethods(IntPtr clazz, JniNativeMethodWrapped[] methods)
+    {
+        int methodCount = methods.Length;
+        int methodSize = Marshal.SizeOf<JniNativeMethod>();
+        IntPtr methodsPtr = Marshal.AllocHGlobal(methodSize * methodCount);
+        List<IntPtr> allocatedStrings = new List<IntPtr>();
+
+        try
+        {
+            for (int i = 0; i < methodCount; i++)
+            {
+                var wrapped = methods[i];
+
+                // 分配 Name 和 Signature 的非托管内存
+                IntPtr namePtr = Marshal.StringToHGlobalAnsi(wrapped.Name);
+                IntPtr sigPtr = Marshal.StringToHGlobalAnsi(wrapped.Signature);
+                allocatedStrings.Add(namePtr);
+                allocatedStrings.Add(sigPtr);
+
+                // 构建结构体
+                JniNativeMethod nativeMethod = new JniNativeMethod
+                {
+                    name = namePtr,
+                    signature = sigPtr,
+                    fnPtr = wrapped.FunctionPtr
+                };
+
+                // 将结构体写入非托管内存
+                IntPtr currentMethodPtr = (IntPtr)((byte*)methodsPtr + i * methodSize);
+                Marshal.StructureToPtr(nativeMethod, currentMethodPtr, false);
+            }
+            
+            var registerNatives = Env.FunctionRegisterNatives();
+            return registerNatives(EnvHandle, clazz, methodsPtr, methodCount);
+        }
+        finally
+        {
+            foreach (IntPtr ptr in allocatedStrings)
+            {
+                if (ptr != IntPtr.Zero) Marshal.FreeHGlobal(ptr);
+            }
+            if (methodsPtr != IntPtr.Zero) Marshal.FreeHGlobal(methodsPtr);
+        }
+    }
+
 
     #endregion
 }

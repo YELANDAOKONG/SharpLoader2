@@ -2,6 +2,7 @@
 using Serilog;
 using SharpLoader.Core.Java;
 using SharpLoader.Core.Java.Models;
+using SharpLoader.Core.Java.Models.Wrappers;
 using SharpLoader.Core.Java.Utilities;
 using SharpLoader.Utilities;
 using SharpLoader.Utilities.Logger;
@@ -141,89 +142,78 @@ public static class Program
 
                 #region Register Native Logger Methods
 
-                // 创建全局引用
-                var globalLoggerClass = env.FunctionNewGlobalRef()(envPtr, agentLoggerClass);
+                var globalLoggerClass = java.NewGlobalRef(agentLoggerClass);
                 if (globalLoggerClass == IntPtr.Zero)
                 {
                     Logger?.Error("Failed to create global reference for Logger class");
                     return -255;
                 }
-                Logger?.Info($"Created global reference for Logger class: 0x{globalLoggerClass:X}");
-                
-                var registerNatives = env.FunctionRegisterNatives();
-                var methodCount = 8;
-                
-                IntPtr methodsPtr = Marshal.AllocHGlobal(Marshal.SizeOf<JniNativeMethod>() * methodCount);
-                try
+
+                JniNativeMethodWrapped[] methodsWrapped;
+                unsafe
                 {
-                    unsafe
+                    methodsWrapped = new JniNativeMethodWrapped[]
                     {
-                        // 定义方法信息
-                        var methods = new (string name, string signature, IntPtr functionPtr)[]
+                        new JniNativeMethodWrapped
                         {
-                            ("all", "(Ljava/lang/String;)V",
-                                (IntPtr)(delegate* unmanaged<IntPtr, IntPtr, IntPtr, void>)&NativeAgentLogger_All),
-                            ("trace", "(Ljava/lang/String;)V",
-                                (IntPtr)(delegate* unmanaged<IntPtr, IntPtr, IntPtr, void>)&NativeAgentLogger_Trace),
-                            ("debug", "(Ljava/lang/String;)V",
-                                (IntPtr)(delegate* unmanaged<IntPtr, IntPtr, IntPtr, void>)&NativeAgentLogger_Debug),
-                            ("info", "(Ljava/lang/String;)V",
-                                (IntPtr)(delegate* unmanaged<IntPtr, IntPtr, IntPtr, void>)&NativeAgentLogger_Info),
-                            ("warn", "(Ljava/lang/String;)V",
-                                (IntPtr)(delegate* unmanaged<IntPtr, IntPtr, IntPtr, void>)&NativeAgentLogger_Warn),
-                            ("error", "(Ljava/lang/String;)V",
-                                (IntPtr)(delegate* unmanaged<IntPtr, IntPtr, IntPtr, void>)&NativeAgentLogger_Error),
-                            ("fatal", "(Ljava/lang/String;)V",
-                                (IntPtr)(delegate* unmanaged<IntPtr, IntPtr, IntPtr, void>)&NativeAgentLogger_Fatal),
-                            ("off", "(Ljava/lang/String;)V",
-                                (IntPtr)(delegate* unmanaged<IntPtr, IntPtr, IntPtr, void>)&NativeAgentLogger_Off)
-                        };
-                        
-                        // 填充方法结构
-                        for (int i = 0; i < methodCount; i++)
+                            Name = "all",
+                            Signature = "(Ljava/lang/String;)V",
+                            FunctionPtr = (IntPtr)(delegate* unmanaged<IntPtr, IntPtr, IntPtr, void>)&NativeAgentLogger_All
+                        },
+                        new JniNativeMethodWrapped
                         {
-                            var nativeMethod = new JniNativeMethod
-                            {
-                                name = Marshal.StringToHGlobalAnsi(methods[i].name),
-                                signature = Marshal.StringToHGlobalAnsi(methods[i].signature),
-                                fnPtr = methods[i].functionPtr
-                            };
-
-                            Logger?.Info(
-                                $"Registering native method: {methods[i].name}, signature: {methods[i].signature}, ptr: 0x{methods[i].functionPtr:X}");
-
-                            Marshal.StructureToPtr(nativeMethod, methodsPtr + i * Marshal.SizeOf<JniNativeMethod>(),
-                                false);
-                        }
-
-                        // 注册本地方法
-                        int registerResult = registerNatives(envPtr, globalLoggerClass, methodsPtr, methodCount);
-                        if (registerResult != 0)
+                            Name = "trace",
+                            Signature = "(Ljava/lang/String;)V",
+                            FunctionPtr = (IntPtr)(delegate* unmanaged<IntPtr, IntPtr, IntPtr, void>)&NativeAgentLogger_Trace
+                        },
+                        new JniNativeMethodWrapped
                         {
-                            Logger?.Error($"Failed to register native methods, error code: {registerResult}");
-                            return -255;
-                        }
-                    }
-
-                    Logger?.Info("Successfully registered all native methods for Logger class");
+                            Name = "debug",
+                            Signature = "(Ljava/lang/String;)V",
+                            FunctionPtr = (IntPtr)(delegate* unmanaged<IntPtr, IntPtr, IntPtr, void>)&NativeAgentLogger_Debug
+                        },
+                        new JniNativeMethodWrapped
+                        {
+                            Name = "info",
+                            Signature = "(Ljava/lang/String;)V",
+                            FunctionPtr = (IntPtr)(delegate* unmanaged<IntPtr, IntPtr, IntPtr, void>)&NativeAgentLogger_Info
+                        },
+                        new JniNativeMethodWrapped
+                        {
+                            Name = "warn",
+                            Signature = "(Ljava/lang/String;)V",
+                            FunctionPtr = (IntPtr)(delegate* unmanaged<IntPtr, IntPtr, IntPtr, void>)&NativeAgentLogger_Warn
+                        },
+                        new JniNativeMethodWrapped
+                        {
+                            Name = "error",
+                            Signature = "(Ljava/lang/String;)V",
+                            FunctionPtr = (IntPtr)(delegate* unmanaged<IntPtr, IntPtr, IntPtr, void>)&NativeAgentLogger_Error
+                        },
+                        new JniNativeMethodWrapped
+                        {
+                            Name = "fatal",
+                            Signature = "(Ljava/lang/String;)V",
+                            FunctionPtr = (IntPtr)(delegate* unmanaged<IntPtr, IntPtr, IntPtr, void>)&NativeAgentLogger_Fatal
+                        },
+                        new JniNativeMethodWrapped
+                        {
+                            Name = "off",
+                            Signature = "(Ljava/lang/String;)V",
+                            FunctionPtr = (IntPtr)(delegate* unmanaged<IntPtr, IntPtr, IntPtr, void>)&NativeAgentLogger_Off
+                        },
+                    };
                 }
-                finally
+
+                int registerResult = java.RegisterNativeMethods(globalLoggerClass, methodsWrapped);
+                if (registerResult != 0)
                 {
-                    // 释放方法名和签名内存
-                    for (int i = 0; i < methodCount; i++)
-                    {
-                        var method = Marshal.PtrToStructure<JniNativeMethod>(methodsPtr + i * Marshal.SizeOf<JniNativeMethod>());
-                        if (method != null) Marshal.FreeHGlobal(method.name);
-                        if (method != null) Marshal.FreeHGlobal(method.signature);
-                    }
-
-                    // 释放方法数组内存
-                    Marshal.FreeHGlobal(methodsPtr);
-
-                    // TODO...
-                    // 注意：全局引用需要在适当的时候释放，但通常是在程序退出前
-                    // env.FunctionDeleteGlobalRef()(envPtr, globalLoggerClass);
+                    Logger?.Error($"Failed to register native methods, error code: {registerResult}");
+                    return -255;
                 }
+
+                Logger?.Info("Successfully registered all native methods for Logger class");
+
                 #endregion
 
                 #region Test Logger Methods
