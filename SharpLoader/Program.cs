@@ -1,20 +1,53 @@
 ﻿using System.Runtime.InteropServices;
 using SharpLoader.Core.Java;
 using SharpLoader.Core.Java.Models;
+using SharpLoader.Utilities;
+using SharpLoader.Utilities.Logger;
 
 namespace SharpLoader;
 
 public static class Program
 {
+    public static LoggerService? Logger { get; private set; } = null;
+    
     public static void Main(string[] args)
     {
         Console.WriteLine("[+] Hello, World!");
         var jvmPath = Environment.GetEnvironmentVariable("JVM");
         if (jvmPath == null || string.IsNullOrEmpty(jvmPath))
         {
+            Console.WriteLine("[!] Unable to get JVM path");
             throw new Exception("JVM environment variable not found");
+            Environment.Exit(-1);
             return;
         }
+        
+        var gameDirPath = Environment.GetEnvironmentVariable("GAME");
+        if (gameDirPath == null || string.IsNullOrEmpty(gameDirPath))
+        {
+            Console.WriteLine("[!] Unable to get GAME path");
+            throw new Exception("GAME environment variable not found");
+            Environment.Exit(-1);
+            return;
+        }
+        
+        // Logger
+        var logDirectory = Path.Combine(gameDirPath, "logs", "sharploader");
+        if (!Directory.Exists(logDirectory))
+        {
+            Directory.CreateDirectory(logDirectory);
+        }
+        
+        Logger = new LoggerService(
+            logFilePath: Path.Combine(logDirectory, "latest.log"),
+            logger: new ConsoleCustomLogger(
+                "LOADER", 
+                !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SHARPLOADER_LOG_COLORFUL"))
+            ),
+            moduleName: "SharpLoader",
+            writeToFile: true
+        );
+        Logger?.Info("Hello, World!");
 
         // JavaVM Options
         List<IntPtr> stringPointers = new();
