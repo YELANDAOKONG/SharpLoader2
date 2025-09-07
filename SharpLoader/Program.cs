@@ -239,7 +239,19 @@ public static class Program
                 java.CallStaticVoidMethodA(globalLoggerClass, testMethodId);
                 Logger?.Info("Successfully called logger test method");
                 
-
+                // Call with arguments
+                var testArgMethodId = java.GetStaticMethodId(globalLoggerClass, "test", "(J)V");
+                if (testArgMethodId == IntPtr.Zero)
+                {
+                    Logger?.Error("Failed to find test method with arguments in Logger class");
+                }
+                
+                Logger?.Info($"Found logger test method with arguments, method ID: 0x{testArgMethodId:X}");
+                JValue testArgs = new JValue();
+                testArgs.j = Random.Shared.NextInt64();
+                java.CallStaticVoidMethodA(globalLoggerClass, testArgMethodId, [testArgs]);
+                Logger?.Info("Successfully called logger test method with arguments");
+                
                 #endregion
                 
 
