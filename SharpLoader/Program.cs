@@ -421,6 +421,17 @@ public static class Program
                 bootArgs[0] = new JValue { l = argsArray };
                 java.CallStaticVoidMethodA(wrappedMainClass, mainMethodId, bootArgs);
                 Logger?.Info("Called Wrapped Main method");
+                
+                var exceptionOccurred = env.FunctionExceptionOccurred()(envPtr);
+                if (exceptionOccurred != IntPtr.Zero)
+                {
+                    Logger?.Error("Exception occurred after calling Wrapped Main");
+                    env.FunctionExceptionDescribe()(envPtr);
+                    env.FunctionExceptionClear()(envPtr);
+    
+                    Thread.Sleep(5000);
+                    return -255;
+                }
 
                 #endregion
                 
