@@ -20,6 +20,7 @@ public class JStringHelper
     {
         if (env == IntPtr.Zero || jstring == IntPtr.Zero)
             return string.Empty;
+        
         try
         {
             var getStringUtfChars = _jniTable.FunctionGetStringUTFChars();

@@ -2,6 +2,7 @@
 using Serilog;
 using SharpLoader.Core.Java;
 using SharpLoader.Core.Java.Models;
+using SharpLoader.Core.Java.Utilities;
 using SharpLoader.Utilities;
 using SharpLoader.Utilities.Logger;
 
@@ -165,10 +166,81 @@ public static class Program
 
         return 0;
     }
+
+    #region Native Agent Logger
     
     [UnmanagedCallersOnly]
     public static void NativeAgentLogger_All(IntPtr env, IntPtr jclass, IntPtr jstring)
     {
+        var stringHelper = new JStringHelper(env);
+        string? managedString = stringHelper.GetStringUtfChars(env, jstring);
         
+        AgentLogger?.All(managedString ?? string.Empty);
     }
+    
+    [UnmanagedCallersOnly]
+    public static void NativeAgentLogger_Trace(IntPtr env, IntPtr jclass, IntPtr jstring)
+    {
+        var stringHelper = new JStringHelper(env);
+        string? managedString = stringHelper.GetStringUtfChars(env, jstring);
+        
+        AgentLogger?.Trace(managedString ?? string.Empty);
+    }
+    
+    [UnmanagedCallersOnly]
+    public static void NativeAgentLogger_Debug(IntPtr env, IntPtr jclass, IntPtr jstring)
+    {
+        var stringHelper = new JStringHelper(env);
+        string? managedString = stringHelper.GetStringUtfChars(env, jstring);
+        
+        AgentLogger?.Debug(managedString ?? string.Empty);
+    }
+    
+    [UnmanagedCallersOnly]
+    public static void NativeAgentLogger_Info(IntPtr env, IntPtr jclass, IntPtr jstring)
+    {
+        var stringHelper = new JStringHelper(env);
+        string? managedString = stringHelper.GetStringUtfChars(env, jstring);
+        
+        AgentLogger?.Info(managedString ?? string.Empty);
+    }
+    
+    [UnmanagedCallersOnly]
+    public static void NativeAgentLogger_Warn(IntPtr env, IntPtr jclass, IntPtr jstring)
+    {
+        var stringHelper = new JStringHelper(env);
+        string? managedString = stringHelper.GetStringUtfChars(env, jstring);
+        
+        AgentLogger?.Warn(managedString ?? string.Empty);
+    }
+    
+    [UnmanagedCallersOnly]
+    public static void NativeAgentLogger_Error(IntPtr env, IntPtr jclass, IntPtr jstring)
+    {
+        var stringHelper = new JStringHelper(env);
+        string? managedString = stringHelper.GetStringUtfChars(env, jstring);
+        
+        AgentLogger?.Error(managedString ?? string.Empty);
+    }
+    
+    [UnmanagedCallersOnly]
+    public static void NativeAgentLogger_Fatal(IntPtr env, IntPtr jclass, IntPtr jstring)
+    {
+        var stringHelper = new JStringHelper(env);
+        string? managedString = stringHelper.GetStringUtfChars(env, jstring);
+        
+        AgentLogger?.Fatal(managedString ?? string.Empty);
+    }
+    
+    [UnmanagedCallersOnly]
+    public static void NativeAgentLogger_Off(IntPtr env, IntPtr jclass, IntPtr jstring)
+    {
+        var stringHelper = new JStringHelper(env);
+        string? managedString = stringHelper.GetStringUtfChars(env, jstring);
+        
+        AgentLogger?.Off(managedString ?? string.Empty);
+    }
+    
+    #endregion
+    
 }
