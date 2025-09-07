@@ -130,7 +130,8 @@ public static class Program
             JavaHelper java = new JavaHelper(jvm, envPtr);
             try
             {
-                var agentLoggerClass = env.FunctionFindClass()(envPtr, Statics.JavaAgentLoggerClassName);
+                // var agentLoggerClass = env.FunctionFindClass()(envPtr, Statics.JavaAgentLoggerClassName);
+                var agentLoggerClass = java.FindClass(Statics.JavaAgentLoggerClassName);
                 if (agentLoggerClass == IntPtr.Zero)
                 {
                     Logger?.Error("Java agent logger class not found");
