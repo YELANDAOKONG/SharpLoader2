@@ -13,6 +13,10 @@ namespace SharpLoader;
 
 public static class Program
 {
+    
+    public static IntPtr GlobalJavaVm { get; private set; } = IntPtr.Zero;
+    public static ManualResetEventSlim JvmCreatedEvent = new ManualResetEventSlim(false);
+    
     public static LoggerService? Logger { get; private set; } = null;
     public static LoggerService? AgentLogger { get; private set; } = null;
     
@@ -164,10 +168,12 @@ public static class Program
             InvokeHelper helper = new InvokeHelper(jvmPath);
             var createJavaVmDelegate = helper.GetFunction<InvokeTable.JniCreateJavaVmDelegate>("JNI_CreateJavaVM");
             createJavaVmDelegate(out jvm, out envPtr, initArgsPtr);
+            JvmCreatedEvent.Set();
             
             Logger?.Info($"JVM Pointer: 0x{jvm:X}");
             Logger?.Info($"Env Pointer: 0x{envPtr:X}");
 
+            GlobalJavaVm = jvm;
             JvmTable jvmInvoker = new JvmTable(jvm);
             JniTable env = new JniTable(envPtr);
             JavaHelper java = new JavaHelper(jvm, envPtr);
@@ -357,7 +363,7 @@ public static class Program
                 }
                 globalRefs.Add(globalAgentClass);
                 
-                var moduleManager = new ModuleManager(Logger?.CreateSubModule("ModuleManager"), jvm, envPtr);
+                var moduleManager = new ModuleManager(Logger?.CreateSubModule("ModuleManager"), invokeHelper: helper, jvm: jvm);
                 moduleManager.LoadAllModules(modDirPath);
                 
                 

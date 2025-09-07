@@ -1,3 +1,4 @@
+using SharpLoader.Core.Java;
 using SharpLoader.Core.Modding;
 using SharpLoader.Utilities;
 
@@ -5,7 +6,7 @@ namespace SharpLoader.Modding;
 
 public interface IModule
 {
-    bool Setup(IntPtr jvm, IntPtr env);
+    bool Setup(InvokeHelper helper, IntPtr jvm, IntPtr pEnv);
 
     void Initialize(ModuleManager manager, LoggerService? logger) { }
 

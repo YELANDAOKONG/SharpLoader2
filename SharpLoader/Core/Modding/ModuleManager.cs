@@ -4,6 +4,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using SharpLoader.Core.Java;
 using SharpLoader.Core.Minecraft.Mapping.Implements.Yarn;
 using SharpLoader.Core.Minecraft.Mapping.Models;
 using SharpLoader.Modding;
@@ -18,8 +19,8 @@ public class ModuleManager
     
     public LoggerService? Logger { get; private set; }
     public LoggerService? ModulesLogger { get; private set; }
+    public InvokeHelper Helper { get; private set; }
     public IntPtr Jvm { get; private set; }
-    public IntPtr Env { get; private set; }
     
     private readonly List<IModule> _loadedModules = new();
     private readonly Dictionary<string, IModule> _namespaceToModuleMap = new();
@@ -28,12 +29,12 @@ public class ModuleManager
     public bool PrintMapping { get; set; } = false;
     public MappingSet Mapping { get; private set; } = new();
 
-    public ModuleManager(LoggerService? logger, IntPtr jvm, IntPtr env)
+    public ModuleManager(LoggerService? logger, InvokeHelper invokeHelper, IntPtr jvm)
     {
         Logger = logger;
         ModulesLogger = logger?.CreateSubModule("Modules");
+        Helper = invokeHelper;
         Jvm = jvm;
-        Env = env;
         Instance = this;
 
         InitializeMappings();
@@ -193,7 +194,24 @@ public class ModuleManager
             }
             
             // 设置模组
-            if (!module.Setup(Jvm, Env))
+            // module.Setup(Jvm, Env)
+            IntPtr localEnvPtr = IntPtr.Zero;
+            if (Jvm != IntPtr.Zero)
+            {
+                JvmTable table = new JvmTable(Jvm);
+                var function = table.FunctionAttachCurrentThread();
+                var status = function(Jvm, out localEnvPtr, IntPtr.Zero);
+                if (status != 0)
+                {
+                    Logger?.Warn($"Failed to attach current thread: {status}");
+                    localEnvPtr = IntPtr.Zero;
+                }
+                else
+                {
+                    Logger?.Info($"Attached thread: 0x{localEnvPtr:X}");
+                }
+            }
+            if (!module.Setup(Helper, Jvm, localEnvPtr))
             {
                 throw new Exception("Module setup failed");
             }
