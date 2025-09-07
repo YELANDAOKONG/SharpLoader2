@@ -120,7 +120,6 @@ public static class Program
             IntPtr jvm, envPtr;
             InvokeHelper helper = new InvokeHelper(jvmPath);
             var createJavaVmDelegate = helper.GetFunction<InvokeTable.JniCreateJavaVmDelegate>("JNI_CreateJavaVM");
-            var destroyJavaVmDelegate = helper.GetFunction<InvokeTable.DestroyJavaVMDelegate>("JNI_DestroyJavaVM");
             createJavaVmDelegate(out jvm, out envPtr, initArgsPtr);
             
             Logger?.Info($"JVM Pointer: 0x{jvm:X}");
@@ -223,23 +222,52 @@ public static class Program
                     // env.FunctionDeleteGlobalRef()(envPtr, globalLoggerClass);
                 }
                 #endregion
-                
-                
+
+                #region Test Logger Methods
+
+                IntPtr testMethodPtr = IntPtr.Zero;
+                IntPtr signaturePtr = IntPtr.Zero;
+                try
+                {
+                    var getStaticMethodId = env.FunctionGetStaticMethodID();
+                    testMethodPtr = Marshal.StringToHGlobalAnsi("test");
+                    signaturePtr = Marshal.StringToHGlobalAnsi("()V");
+                    var testMethodId = getStaticMethodId(envPtr, globalLoggerClass, testMethodPtr, signaturePtr);
+                    if (testMethodId == IntPtr.Zero)
+                    {
+                        Logger?.Error("Failed to find test method in Logger class");
+                        return -255;
+                    }
+
+                    Logger?.Info($"Found logger test method, method ID: 0x{testMethodId:X}");
+
+                    var callStaticVoidMethod = env.FunctionCallStaticVoidMethodA();
+                    callStaticVoidMethod(envPtr, globalLoggerClass, testMethodId, IntPtr.Zero);
+                    Logger?.Info("Successfully called logger test method");
+                }
+                finally
+                {
+                    if (testMethodPtr != IntPtr.Zero) Marshal.FreeHGlobal(testMethodPtr);
+                    
+                    if (signaturePtr != IntPtr.Zero) Marshal.FreeHGlobal(signaturePtr);
+                }
                 
 
-                var agentMainClass = env.FunctionFindClass()(envPtr, Statics.JavaAgentClassName);
-                if (agentMainClass == IntPtr.Zero)
-                {
-                    Logger?.Error("Java agent class not found");
-                    throw new Exception("Java agent class not found");
-                    return -255;
-                }
+                #endregion
+                
+
+                // var agentMainClass = env.FunctionFindClass()(envPtr, Statics.JavaAgentClassName);
+                // if (agentMainClass == IntPtr.Zero)
+                // {
+                //     Logger?.Error("Java agent class not found");
+                //     throw new Exception("Java agent class not found");
+                //     return -255;
+                // }
 
                 // TODO...
                 
                 
-                
-                _ = destroyJavaVmDelegate(jvm);
+                // TODO: Destroy JVM
                 return 0;
             }
             catch (Exception ex)

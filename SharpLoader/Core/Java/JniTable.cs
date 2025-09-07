@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using SharpLoader.Core.Java.Models;
 
 namespace SharpLoader.Core.Java;
 
@@ -250,6 +251,15 @@ public class JniTable
     [UnmanagedFunctionPointer(JniVersion.Convention)]
     public delegate IntPtr GetMethodID(IntPtr env, IntPtr clazz, string name, string sig);
     public GetMethodID FunctionGetMethodID() => Function<GetMethodID>(Table.GetMethodID);
+    
+    [UnmanagedFunctionPointer(JniVersion.Convention)]
+    public delegate IntPtr GetStaticMethodID(IntPtr env, IntPtr clazz, IntPtr name, IntPtr sig);
+    public GetStaticMethodID FunctionGetStaticMethodID() => Function<GetStaticMethodID>(Table.GetStaticMethodID);
+
+    [UnmanagedFunctionPointer(JniVersion.Convention)]
+    public delegate void CallStaticVoidMethodA(IntPtr env, IntPtr clazz, IntPtr methodID, IntPtr args);
+    public CallStaticVoidMethodA FunctionCallStaticVoidMethodA() => Function<CallStaticVoidMethodA>(Table.CallStaticVoidMethodA);
+
 
     // Call<type>MethodA delegates
     [UnmanagedFunctionPointer(JniVersion.Convention)]
