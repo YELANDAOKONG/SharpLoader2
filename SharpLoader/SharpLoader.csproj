@@ -25,4 +25,8 @@
       <PackageReference Include="System.Text.Json" Version="9.0.8" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Core\Minecraft\Mapping\" />
+    </ItemGroup>
+
 </Project>
