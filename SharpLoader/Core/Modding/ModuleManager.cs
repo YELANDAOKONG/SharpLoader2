@@ -4,6 +4,8 @@ using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using SharpLoader.Core.Minecraft.Mapping.Implements.Yarn;
+using SharpLoader.Core.Minecraft.Mapping.Models;
 using SharpLoader.Modding;
 using SharpLoader.Modding.Models;
 using SharpLoader.Utilities;
@@ -22,13 +24,68 @@ public class ModuleManager
     private readonly Dictionary<string, IModule> _namespaceToModuleMap = new();
     private readonly Dictionary<string, List<IModule>> _classModifiers = new();
 
+    public bool PrintMapping { get; set; } = false;
+    public MappingSet Mapping { get; private set; } = new();
+
     public ModuleManager(LoggerService? logger, IntPtr jvm, IntPtr env)
     {
         Logger = logger;
         Jvm = jvm;
         Env = env;
         Instance = this;
+
+        InitializeMappings();
     }
+
+    public void InitializeMappings()
+    {
+        var type = Environment.GetEnvironmentVariable("MAPPING");
+        var path = Environment.GetEnvironmentVariable("MAPPINGS");
+        if (!string.IsNullOrEmpty(type) && !string.IsNullOrEmpty(path))
+        {
+            if (type.ToUpper().Equals("YARN"))
+            {
+                try
+                {
+                    Logger?.Info("Loading Yarn Mappings...");
+                    LoadYarnMappings(path);
+                    Logger?.Info($"Loaded Yarn Mappings ({Mapping.Classes.Count} Classes, {Mapping.InnerClasses.Count} InnerClasses)");
+                }
+                catch (Exception e)
+                {
+                    Logger?.Error($"Error when loading mappings: {e.Message}");
+                    if (e.StackTrace != null) Logger?.Trace(e.StackTrace);
+                }
+            }
+        }
+        else
+        {
+            Logger?.Warn("No mappings provided.");
+        }
+    }
+
+    #region Mappings
+
+    #region Handler: YarnMappingHandler
+
+    public void LoadYarnMappings(string yarnZipFilePath)
+    {
+        Mapping = new MappingSet();
+        YarnMappingHandler yarnMappingHandler = new YarnMappingHandler(yarnZipFilePath);
+        foreach (var allClassMapping in yarnMappingHandler.GetAllClassMappings())
+        {
+            Mapping.Classes.Add(allClassMapping.Key, allClassMapping.Value);
+        }
+        foreach (var allInnerClassMapping in yarnMappingHandler.GetAllInnerClassMappings())
+        {
+            Mapping.InnerClasses.Add(allInnerClassMapping.Key, allInnerClassMapping.Value);
+        }
+    }
+
+    #endregion
+
+    #endregion
+    
     
     /// <summary>
     /// 加载所有模组
@@ -224,6 +281,12 @@ public class ModuleManager
     /// </summary>
     public bool ShouldModifyClassDynamic(IntPtr env, IntPtr clazz, string className)
     {
+        if (PrintMapping)
+        {
+            var classMappedName = Mapping.Classes.TryGetValue(className, out var mappedClass);
+            if (classMappedName) Logger?.Debug($"(Mappings) {className} => {mappedClass?.MappedName}");
+        }
+        
         // 简单实现：所有模组都有机会修改任何类
         // 实际实现中可以根据类名进行过滤
         // TODO...
