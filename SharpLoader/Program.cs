@@ -67,7 +67,7 @@ public static class Program
             logFilePath: Path.Combine(logDirectory, "latest.log"),
             logger: new ConsoleCustomLogger(
                 "LOADER", 
-                !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SHARPLOADER_LOG_COLORFUL"))
+                colorful: string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SHARPLOADER_LOG_NOCOLORFUL"))
             ),
             moduleName: "SharpLoader",
             writeToFile: true
