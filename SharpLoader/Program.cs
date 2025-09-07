@@ -68,10 +68,10 @@ public static class Program
         Logger = new LoggerService(
             logFilePath: Path.Combine(logDirectory, "latest.log"),
             logger: new ConsoleCustomLogger(
-                "LOADER", 
+                Statics.LoggerModuleName, 
                 colorful: string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SHARPLOADER_LOG_NOCOLORFUL"))
             ),
-            moduleName: "SharpLoader",
+            moduleName: Statics.LoggerModuleName,
             writeToFile: true
         );
         AgentLogger = Logger.CreateSubModule("Agent");
