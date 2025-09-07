@@ -10,6 +10,7 @@ namespace SharpLoader;
 public static class Program
 {
     public static LoggerService? Logger { get; private set; } = null;
+    public static LoggerService? AgentLogger { get; private set; } = null;
     
     public static int Main(string[] args)
     {
@@ -72,7 +73,9 @@ public static class Program
             moduleName: "SharpLoader",
             writeToFile: true
         );
+        AgentLogger = Logger.CreateSubModule("Agent");
         Logger?.Info("Hello, World!");
+        AgentLogger?.Info("Hello, World!");
 
         #endregion
         
@@ -161,5 +164,11 @@ public static class Program
         }
 
         return 0;
+    }
+    
+    [UnmanagedCallersOnly]
+    public static void NativeAgentLogger_All(IntPtr env, IntPtr jclass, IntPtr jstring)
+    {
+        
     }
 }

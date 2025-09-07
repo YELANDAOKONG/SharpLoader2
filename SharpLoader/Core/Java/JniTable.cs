@@ -315,6 +315,18 @@ public class JniTable
     [UnmanagedFunctionPointer(JniVersion.Convention)]
     public delegate void ReleaseStringChars(IntPtr env, IntPtr str, IntPtr chars);
     public ReleaseStringChars FunctionReleaseStringChars() => Function<ReleaseStringChars>(Table.ReleaseStringChars);
+    
+    [UnmanagedFunctionPointer(JniVersion.Convention)]
+    public delegate IntPtr GetStringUTFChars(IntPtr env, IntPtr str, IntPtr isCopy);
+    public GetStringUTFChars FunctionGetStringUTFChars() => Function<GetStringUTFChars>(Table.GetStringUTFChars);
+    
+    [UnmanagedFunctionPointer(JniVersion.Convention)]
+    public delegate void ReleaseStringUTFChars(IntPtr env, IntPtr str, IntPtr chars);
+    public ReleaseStringUTFChars FunctionReleaseStringUTFChars() => Function<ReleaseStringUTFChars>(Table.ReleaseStringUTFChars);
+    
+    [UnmanagedFunctionPointer(JniVersion.Convention)]
+    public delegate int GetStringUTFLength(IntPtr env, IntPtr str);
+    public GetStringUTFLength FunctionGetStringUTFLength() => Function<GetStringUTFLength>(Table.GetStringUTFLength);
 
     // Array operations
     [UnmanagedFunctionPointer(JniVersion.Convention)]
