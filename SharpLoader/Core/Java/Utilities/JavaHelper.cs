@@ -128,6 +128,35 @@ public class JavaHelper
         }
     }
 
+    public IntPtr NewObjectArray(int length, IntPtr elementClass, IntPtr initialElement)
+    {
+        return Env.FunctionNewObjectArray()(EnvHandle, length, elementClass, initialElement);
+    }
+    
+    public IntPtr NewStringUTF(string str)
+    {
+        IntPtr strPtr = IntPtr.Zero;
+        try
+        {
+            strPtr = Marshal.StringToHGlobalAnsi(str);
+            return Env.FunctionNewStringUTF()(EnvHandle, strPtr);
+        }
+        finally
+        {
+            if (strPtr != IntPtr.Zero) Marshal.FreeHGlobal(strPtr);
+        }
+    }
+
+    public void SetObjectArrayElement(IntPtr array, int index, IntPtr value)
+    {
+        Env.FunctionSetObjectArrayElement()(EnvHandle, array, index, value);
+    }
+
+    public void DeleteLocalRef(IntPtr localRef)
+    {
+        Env.FunctionDeleteLocalRef()(EnvHandle, localRef);
+    }
+
 
     #endregion
 }

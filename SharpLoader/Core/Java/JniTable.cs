@@ -323,6 +323,10 @@ public class JniTable
     public GetStringChars FunctionGetStringChars() => Function<GetStringChars>(Table.GetStringChars);
 
     [UnmanagedFunctionPointer(JniVersion.Convention)]
+    public delegate IntPtr NewStringUTF(IntPtr env, IntPtr bytes);
+    public NewStringUTF FunctionNewStringUTF() => Function<NewStringUTF>(Table.NewStringUTF);
+    
+    [UnmanagedFunctionPointer(JniVersion.Convention)]
     public delegate void ReleaseStringChars(IntPtr env, IntPtr str, IntPtr chars);
     public ReleaseStringChars FunctionReleaseStringChars() => Function<ReleaseStringChars>(Table.ReleaseStringChars);
     

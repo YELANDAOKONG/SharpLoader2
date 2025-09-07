@@ -7,6 +7,7 @@ public class Statics
     
     
     public const string JavaAgentClassName = "xyz/dkos/sharploader/agent/Main";
+    public const string JavaAgentWrappedMainClassName = "xyz/dkos/sharploader/agent/WrappedMain";
     public const string JavaAgentLoggerClassName = "xyz/dkos/sharploader/agent/Logger";
     public const string JavaAgentNativeMethodsClassName = "xyz/dkos/sharploader/agent/NativeMethods";
     

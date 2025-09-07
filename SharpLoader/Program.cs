@@ -43,6 +43,15 @@ public static class Program
             Environment.Exit(-1);
             return -1;
         }
+        
+        var mainClassPath = Environment.GetEnvironmentVariable("MAIN");
+        if (mainClassPath == null || string.IsNullOrEmpty(mainClassPath))
+        {
+            Console.WriteLine("[!] Unable to get MAIN class");
+            throw new Exception("MAIN environment variable not found");
+            Environment.Exit(-1);
+            return -1;
+        }
 
         #endregion
         
@@ -86,13 +95,35 @@ public static class Program
         AgentLogger?.Info("Hello, World!");
 
         #endregion
+        
+        List<string> jvmArgs = new List<string>();
+        List<string> mainArgs = new List<string>();
+
+        bool foundSeparator = false;
+        foreach (var arg in args)
+        {
+            if (arg == "--")
+            {
+                foundSeparator = true;
+                continue;
+            }
+
+            if (!foundSeparator)
+            {
+                jvmArgs.Add(arg);
+            }
+            else
+            {
+                mainArgs.Add(arg);
+            }
+        }
 
         #region JavaVM Options
         
         // JavaVM Options
         List<IntPtr> stringPointers = new();
         List<JavaVmOption> options = new();
-        foreach (var arg in args)
+        foreach (var arg in jvmArgs) // args
         {
             var argPtr = Marshal.StringToHGlobalAnsi(arg);
             stringPointers.Add(argPtr);
@@ -354,6 +385,45 @@ public static class Program
                     e.Cancel = true;
                     _jvmExitEvent.Set();
                 };
+
+
+                #region Call Wrapped Main
+
+                var wrappedMainClass = java.FindClass(Statics.JavaAgentWrappedMainClassName);
+                if (wrappedMainClass == IntPtr.Zero)
+                {
+                    Logger?.Error("Wrapped Main class not found");
+                    return -255;
+                }
+                var mainMethodId = java.GetStaticMethodId(wrappedMainClass, "main", "([Ljava/lang/String;)V");
+                if (mainMethodId == IntPtr.Zero)
+                {
+                    Logger?.Error("Wrapped Main method not found");
+                    return -255;
+                }
+                
+                IntPtr stringClass = java.FindClass("java/lang/String");
+                if (stringClass == IntPtr.Zero)
+                {
+                    Logger?.Error("String class not found");
+                    return -255;
+                }
+        
+                IntPtr argsArray = java.NewObjectArray(mainArgs.Count, stringClass, IntPtr.Zero);
+                for (int i = 0; i < mainArgs.Count; i++)
+                {
+                    IntPtr jString = java.NewStringUTF(mainArgs[i]);
+                    java.SetObjectArrayElement(argsArray, i, jString);
+                    java.DeleteLocalRef(jString); 
+                }
+        
+                JValue[] bootArgs = new JValue[1];
+                bootArgs[0] = new JValue { l = argsArray };
+                java.CallStaticVoidMethodA(wrappedMainClass, mainMethodId, bootArgs);
+                Logger?.Info("Called Wrapped Main method");
+
+                #endregion
+                
                 
                 Logger?.Info("Java application started. Waiting for exit signal...");
                 _jvmExitEvent.WaitOne();
