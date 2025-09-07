@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using Serilog;
 using SharpLoader.Core.Java;
 using SharpLoader.Core.Java.Models;
 using SharpLoader.Utilities;
@@ -10,16 +11,19 @@ public static class Program
 {
     public static LoggerService? Logger { get; private set; } = null;
     
-    public static void Main(string[] args)
+    public static int Main(string[] args)
     {
         Console.WriteLine("[+] Hello, World!");
+
+        #region Check Environment
+
         var jvmPath = Environment.GetEnvironmentVariable("JVM");
         if (jvmPath == null || string.IsNullOrEmpty(jvmPath))
         {
             Console.WriteLine("[!] Unable to get JVM path");
             throw new Exception("JVM environment variable not found");
             Environment.Exit(-1);
-            return;
+            return -1;
         }
         
         var gameDirPath = Environment.GetEnvironmentVariable("GAME");
@@ -28,15 +32,36 @@ public static class Program
             Console.WriteLine("[!] Unable to get GAME path");
             throw new Exception("GAME environment variable not found");
             Environment.Exit(-1);
-            return;
+            return -1;
         }
+
+        #endregion
         
+        // Mods Directory
+        var modDirPath = Path.Combine(gameDirPath, "mods");
+        if (!Directory.Exists(modDirPath))
+        {
+            Directory.CreateDirectory(modDirPath);
+        }
+
+        #region Logger
+
         // Logger
         var logDirectory = Path.Combine(gameDirPath, "logs", "sharploader");
         if (!Directory.Exists(logDirectory))
         {
             Directory.CreateDirectory(logDirectory);
         }
+
+        var logFilePath = Path.Combine(logDirectory, "latest.log");
+        if (File.Exists(logFilePath))
+        {
+            // TODO: Log Compress
+            var date = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+            var newFileName = $"log_renamed_at_{date}_{Random.Shared.NextInt64()}.log";
+            File.Move(logFilePath, newFileName, true);
+        }
+        // TODO: Check File Locked (Two or more processes...)
         
         Logger = new LoggerService(
             logFilePath: Path.Combine(logDirectory, "latest.log"),
@@ -49,6 +74,8 @@ public static class Program
         );
         Logger?.Info("Hello, World!");
 
+        #endregion
+        
         // JavaVM Options
         List<IntPtr> stringPointers = new();
         List<JavaVmOption> options = new();
@@ -76,14 +103,23 @@ public static class Program
         
         IntPtr initArgsPtr = Marshal.AllocHGlobal(Marshal.SizeOf<JavaVmInitArgs>());
         Marshal.StructureToPtr(initArgs, initArgsPtr, false);
+        
+        Logger?.Info($"JNI Version: {initArgs.version}");
+        Logger?.Info($"Options: {optionArray.Length}");
+        Logger?.Info($"Options Pointer: 0x{optionsPtr:X}");
+        Logger?.Info($"InitArgs Pointer: 0x{initArgsPtr:X}");
 
         try
         {
             // Create JavaVM
+            Logger?.Info("Creating JavaVM...");
             IntPtr jvm, envPtr;
             InvokeHelper helper = new InvokeHelper(jvmPath);
             var createJavaVmDelegate = helper.GetFunction<InvokeTable.JniCreateJavaVmDelegate>("JNI_CreateJavaVM");
             createJavaVmDelegate(out jvm, out envPtr, initArgsPtr);
+            
+            Logger?.Info($"JVM Pointer: 0x{jvm:X}");
+            Logger?.Info($"Env Pointer: 0x{envPtr:X}");
 
             JniTable env = new JniTable(envPtr);
             try
@@ -91,8 +127,9 @@ public static class Program
                 var agentMainClass = env.FunctionFindClass()(envPtr, Statics.JavaAgentClassName);
                 if (agentMainClass == IntPtr.Zero)
                 {
+                    Logger?.Error("Java agent class not found");
                     throw new Exception("Java agent class not found");
-                    Environment.Exit(-1);
+                    return -255;
                 }
 
                 // TODO...
@@ -100,9 +137,9 @@ public static class Program
             }
             catch (Exception ex)
             {
-                // TODO...
-                
-                Environment.Exit(-255);
+                Logger?.Fatal($"[FATAL] {ex.Message}");
+                Logger?.Trace($"[FATAL] {ex.StackTrace}");
+                return -255;
             }
         }
         finally
@@ -122,5 +159,7 @@ public static class Program
                 Marshal.FreeHGlobal(initArgsPtr);
             }
         }
+
+        return 0;
     }
 }
