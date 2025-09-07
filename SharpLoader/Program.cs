@@ -301,16 +301,42 @@ public static class Program
                 #endregion
                 
 
-                // var agentMainClass = env.FunctionFindClass()(envPtr, Statics.JavaAgentClassName);
-                // if (agentMainClass == IntPtr.Zero)
-                // {
-                //     Logger?.Error("Java agent class not found");
-                //     throw new Exception("Java agent class not found");
-                //     return -255;
-                // }
-
-                // TODO...
+                var agentMainClass = env.FunctionFindClass()(envPtr, Statics.JavaAgentClassName);
+                if (agentMainClass == IntPtr.Zero)
+                {
+                    Logger?.Error("Java agent class not found");
+                    throw new Exception("Java agent class not found");
+                    return -255;
+                }
+                var globalAgentClass = java.NewGlobalRef(agentMainClass);
+                if (globalAgentClass == IntPtr.Zero)
+                {
+                    Logger?.Error("Failed to create global reference for agent class");
+                    return -255;
+                }
+                globalRefs.Add(globalAgentClass);
                 
+                var moduleManager = new ModuleManager(Logger?.CreateSubModule("ModuleManager"), jvm, envPtr);
+                moduleManager.LoadAllModules(modDirPath);
+                
+                
+                var setInitializedMethodId = java.GetStaticMethodId(globalAgentClass, "setInitialized", "(Z)V");
+                if (setInitializedMethodId != IntPtr.Zero)
+                {
+                    JValue[] jValues = new JValue[1];
+                    jValues[0] = new JValue { z = true }; 
+        
+                    java.CallStaticVoidMethodA(globalAgentClass, setInitializedMethodId, jValues);
+                    Logger?.Info("Called Java agent setInitialized method");
+                }
+                else
+                {
+                    Logger?.Error("Failed to find setInitialized method in Java agent class");
+                }
+                
+                
+                
+                // TODO: Wait JVM...
                 Logger?.All("Please press enter to continue...");
                 Console.ReadLine();
                 
