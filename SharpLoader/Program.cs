@@ -313,7 +313,7 @@ public static class Program
                         {
                             Name = "shouldModifyClass",
                             Signature = "(Ljava/lang/String;)Z",
-                            FunctionPtr = (IntPtr)(delegate* unmanaged<IntPtr, IntPtr, IntPtr, bool>)&ShouldModifyClass
+                            FunctionPtr = (IntPtr)(delegate* unmanaged<IntPtr, IntPtr, IntPtr, byte>)&ShouldModifyClass
                         },
                         new JniNativeMethodWrapped
                         {
@@ -563,7 +563,7 @@ public static class Program
     #region Native Class Loader
 
     [UnmanagedCallersOnly]
-    public static bool ShouldModifyClass(IntPtr env, IntPtr clazz, IntPtr className)
+    public static byte ShouldModifyClass(IntPtr env, IntPtr clazz, IntPtr className)
     {
         try
         {
@@ -572,16 +572,20 @@ public static class Program
             string? managedClassName = stringHelper.GetStringUtfChars(env, className);
             if (string.IsNullOrEmpty(managedClassName))
             {
-                return false;
+                return 0x0;
             }
-        
-            return ModuleManager.ShouldModifyClass(env, clazz, managedClassName);
+
+            if (ModuleManager.ShouldModifyClass(env, clazz, managedClassName))
+            {
+                return 0x1;
+            }
+            return 0x0;
         }
         catch (Exception ex)
         {
             Logger?.Error($"Error in ShouldModifyClass: {ex.Message}");
             if (ex.StackTrace != null) Logger?.Trace(ex.StackTrace);
-            return false;
+            return 0x0;
         }
     }
 
