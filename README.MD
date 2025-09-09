@@ -10,6 +10,8 @@
 
 [示例模组](https://github.com/YELANDAOKONG/SharpLoader2-Example)
 
+> 构建前请修改 `SharpLoader.Core.Java.JniVersion.Convention` 以适配目标平台。
+
 ### 环境变量
 
 | 名称 | 示例                                                | 描述                |
