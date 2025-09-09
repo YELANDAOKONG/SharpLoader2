@@ -6,7 +6,9 @@
 
 ## Example
 
-> 当前仍在开发中，代码变动频繁，请注意！
+> **当前仍在开发中，代码变动频繁，请注意！**
+
+[示例模组](https://github.com/YELANDAOKONG/SharpLoader2-Example)
 
 ### 环境变量
 
@@ -20,7 +22,7 @@
 
 ### 启动游戏
 
-1. 在 HMCL 等启动器中到处启动脚本；
+1. 在 HMCL 等启动器中导出启动脚本；
 2. 修改脚本并定义运行所需的环境变量；
 3. **添加 SharpAgent 作为 Java Agent**；
 4. 修改替换 JAVA.exe 为 SharpLoader.exe；
@@ -28,5 +30,46 @@
 6. 找到 JVM 参数和程序参数的交界处（即主类后），添加 `--`（如 `net.fabricmc.loader.impl.launch.knot.KnotClient -- --username ...`）；
 7. 启动脚本即可运行游戏；
 
+### 模块开发
 
+> 使用 “模块” 与原版 “模组” 进行区分。
+
+模块主类是实现了 `IModule` 接口或继承了 `ModuleBase` 的类。
+
+具体可参考 [示例模组](https://github.com/YELANDAOKONG/SharpLoader2-Example)。
+
+### 模块文件
+
+模块是一个拥有 `sharp.json` 文件的 ZIP 压缩包。
+
+Sharp.JSON （使用大写驼峰）必须包含 `Id` 和 `Namespace`；
+
+如果入口点未定义，则使用默认 `default.dll`；
+如果主类未定义，则使用反射查找到的第一个实现了 `IModule` 的类。
+
+```json
+{
+  "Id": "SharpLoaderExample",
+  "Namespace": "SharpLoaderExample",
+  
+  "Version": {
+    "Major": 1,
+    "Minor": 0,
+    "Patch": 0
+  },
+  
+  "EntryPoint": "SharpLoaderExample.dll",
+  "MainClass": "SharpLoaderExample.ModuleMain",
+  
+  "Title": "SharpLoader Example",
+  "Description": "Sharp Loader Example Module",
+  "Authors": [
+    "You"
+  ]
+}
+```
+
+### 模块位置
+
+模块放置在 `GAME` 环境变量（即游戏主目录）下的 `modules` 文件夹中。
 
