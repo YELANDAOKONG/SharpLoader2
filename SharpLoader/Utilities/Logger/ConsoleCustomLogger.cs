@@ -93,6 +93,45 @@ public class ConsoleCustomLogger : ICustomLogger
             AnsiConsole.MarkupLine(builder.ToString());
         }
     }
+    
+    
+    // public void Standard(params string[] messages)
+    // {
+    //     LogAuto("S", messages, "grey", "grey");
+    // }
+    
+    public void Standard(params string[] messages)
+    {
+        if (Colorful)
+        {
+            StringBuilder builder = new StringBuilder();
+            foreach (string message in messages)
+            {
+                builder.Append($"[grey]{Markup.Escape(message)}[/]");
+                builder.Append(' ');
+            }
+
+            lock (ConsoleLock)
+            {
+                AnsiConsole.MarkupLine(builder.ToString());
+            }
+        }
+        else
+        {
+            StringBuilder builder = new StringBuilder();
+            foreach (string message in messages)
+            {
+                builder.Append($"{message}");
+                builder.Append(' ');
+            }
+
+            lock (ConsoleLock)
+            {
+                Console.WriteLine(builder.ToString());
+            }
+        }
+    }
+    
 
     public void All(params string[] messages)
     {

@@ -93,6 +93,12 @@ public class LoggerService
         return factory.CreateLogger<LoggerService>();
     }
     
+    public void Standard(params string[] messages)
+    {
+        Logger.Standard(messages);
+        // LogToFileIfEnabled(LogLevel.Trace, messages);
+    }
+    
     public void All(params string[] messages)
     {
         Logger.All(messages);

@@ -4,6 +4,8 @@ public interface ICustomLogger
 {
     public void Log(string level, params string[] messages);
     
+    public void Standard(params string[] messages);
+    
     public void Off(params string[] messages);
     public void Trace(params string[] messages);
     public void Debug(params string[] messages);

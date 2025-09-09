@@ -205,6 +205,12 @@ public static class Program
                     {
                         new JniNativeMethodWrapped
                         {
+                            Name = "standard",
+                            Signature = "(Ljava/lang/String;)V",
+                            FunctionPtr = (IntPtr)(delegate* unmanaged<IntPtr, IntPtr, IntPtr, void>)&NativeAgentLogger_Standard
+                        },
+                        new JniNativeMethodWrapped
+                        {
                             Name = "all",
                             Signature = "(Ljava/lang/String;)V",
                             FunctionPtr = (IntPtr)(delegate* unmanaged<IntPtr, IntPtr, IntPtr, void>)&NativeAgentLogger_All
@@ -491,6 +497,15 @@ public static class Program
     }
 
     #region Native Agent Logger
+    
+    [UnmanagedCallersOnly]
+    public static void NativeAgentLogger_Standard(IntPtr env, IntPtr jclass, IntPtr jstring)
+    {
+        var stringHelper = new JStringHelper(env);
+        string? managedString = stringHelper.GetStringUtfChars(env, jstring);
+        
+        AgentLogger?.Standard(managedString ?? string.Empty);
+    }
     
     [UnmanagedCallersOnly]
     public static void NativeAgentLogger_All(IntPtr env, IntPtr jclass, IntPtr jstring)

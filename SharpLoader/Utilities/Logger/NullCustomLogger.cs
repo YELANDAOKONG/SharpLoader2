@@ -4,7 +4,14 @@ namespace SharpLoader.Utilities.Logger;
 
 public class NullCustomLogger : ICustomLogger
 {
+   
+
     public void Log(string level, params string[] messages)
+    {
+        return;
+    }
+    
+    public void Standard(params string[] messages)
     {
         return;
     }
