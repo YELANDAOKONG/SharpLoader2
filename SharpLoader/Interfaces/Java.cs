@@ -31,6 +31,26 @@ public class Java
         return new JniTable(ptr);
     }
 
+    public bool CompareClassName(string className1, string className2)
+    {
+        if (className1.Equals(className2))
+        {
+            return true;
+        }
+
+        if (className1.Replace('/',  '.').Equals(className2.Replace('/', '.')))
+        {
+            return true;
+        }
+        
+        if (className1.Replace('.',  '/').Equals(className2.Replace('.', '/')))
+        {
+            return true;
+        }
+        
+        return false;
+    }
+
     #endregion
 
     #region Functions (Thread)
