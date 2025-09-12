@@ -179,6 +179,12 @@ public class ModuleManager
             {
                 throw new FileNotFoundException($"Assembly '{profile.EntryPoint}' not found in module");
             }
+
+            // 加载原生依赖
+            foreach (var dependency in profile.NativeDependencies)
+            {
+                var _ = LoadAssemblyFromZip(filePath, dependency);
+            }
             
             // 查找并实例化IModule实现
             var moduleType = FindModuleType(assembly, profile.MainClass);

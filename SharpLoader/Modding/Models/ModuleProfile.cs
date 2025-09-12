@@ -11,6 +11,7 @@ public class ModuleProfile
     // Code
     public string EntryPoint { get; set; } = "default.dll";
     public string? MainClass { get; set; }
+    public List<string> NativeDependencies { get; set; } = new List<string>();
     
     // Information
     public string? Icon { get; set; }
