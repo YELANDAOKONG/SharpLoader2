@@ -173,17 +173,17 @@ public class ModuleManager
         
         try
         {
+            // 优先加载原生依赖
+            foreach (var dependency in profile.NativeDependencies)
+            {
+                var _ = LoadAssemblyFromZip(filePath, dependency);
+            }
+            
             // 从ZIP文件中加载程序集
             var assembly = LoadAssemblyFromZip(filePath, profile.EntryPoint);
             if (assembly == null)
             {
                 throw new FileNotFoundException($"Assembly '{profile.EntryPoint}' not found in module");
-            }
-
-            // 加载原生依赖
-            foreach (var dependency in profile.NativeDependencies)
-            {
-                var _ = LoadAssemblyFromZip(filePath, dependency);
             }
             
             // 查找并实例化IModule实现
