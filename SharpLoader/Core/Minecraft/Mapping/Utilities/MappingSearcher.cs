@@ -175,11 +175,31 @@ public class MappingSearcher
         return null;
     }
     
+    public FieldMapping? SearchFieldMapping(string javaName)
+    {
+        if (_fieldsByObfuscatedName.TryGetValue(javaName, out var fields) && fields.Count > 0)
+        {
+            return fields[0];
+        }
+        
+        return null;
+    }
+    
     public string? SearchMethod(string javaName)
     {
         if (_methodsByObfuscatedName.TryGetValue(javaName, out var methods) && methods.Count > 0)
         {
             return methods[0].MappedName;
+        }
+        
+        return null;
+    }
+    
+    public MethodMapping? SearchMethodMapping(string javaName)
+    {
+        if (_methodsByObfuscatedName.TryGetValue(javaName, out var methods) && methods.Count > 0)
+        {
+            return methods[0];
         }
         
         return null;

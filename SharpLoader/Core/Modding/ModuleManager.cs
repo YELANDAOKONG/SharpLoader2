@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using SharpLoader.Core.Java;
 using SharpLoader.Core.Minecraft.Mapping.Implements.Yarn;
 using SharpLoader.Core.Minecraft.Mapping.Models;
+using SharpLoader.Core.Minecraft.Mapping.Utilities;
 using SharpLoader.Modding;
 using SharpLoader.Modding.Models;
 using SharpLoader.Utilities;
@@ -31,6 +32,8 @@ public class ModuleManager
 
     public bool PrintMapping { get; set; } = false;
     public MappingSet Mapping { get; private set; } = new();
+    
+    public MappingSearcher MappingSearcher { get; private set; }
 
     public ModuleManager(LoggerService? logger, InvokeHelper invokeHelper, IntPtr jvm)
     {
@@ -41,6 +44,19 @@ public class ModuleManager
         Instance = this;
 
         InitializeMappings();
+        MappingSearcher = new MappingSearcher(Mapping);
+
+        var exportMappingEnv = Environment.GetEnvironmentVariable("MAPPINGS_EXPORT");
+        if (exportMappingEnv != null)
+        {
+            if (!string.IsNullOrEmpty(exportMappingEnv))
+            {
+                Logger?.Info("Exporting mapping set...");
+                MappingSetJsonConverter.SerializeToFile(Mapping, exportMappingEnv);
+                Logger?.Info($"Exported mapping set to: {exportMappingEnv}");
+            }
+        }
+        
         AppDomain.CurrentDomain.AssemblyResolve += CurrentDomainAssemblyResolve;
     }
 
