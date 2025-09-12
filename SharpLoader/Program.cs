@@ -89,7 +89,7 @@ public static class Program
             logFilePath: Path.Combine(logDirectory, "latest.log"),
             logger: new ConsoleCustomLogger(
                 Statics.LoggerModuleName, 
-                colorful: string.IsNullOrEmpty(Environment.GetEnvironmentVariable("SHARPLOADER_LOG_NOCOLORFUL"))
+                colorful: string.IsNullOrEmpty(Environment.GetEnvironmentVariable("LOGGER_NOCOLORFUL"))
             ),
             moduleName: Statics.LoggerModuleName,
             writeToFile: true
