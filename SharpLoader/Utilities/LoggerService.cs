@@ -41,7 +41,12 @@ public class LoggerService
     public LoggerService CreateSubModule(string moduleName, bool directName = false)
     {
         var newCustomLoggerName = directName ? moduleName : $"{ModuleName}.{moduleName}";
-        var subCustomLogger = new ConsoleCustomLogger(newCustomLoggerName, true);
+        var colorful = true;
+        if (Logger is ConsoleCustomLogger logger)
+        {
+            colorful = logger.Colorful;
+        }
+        var subCustomLogger = new ConsoleCustomLogger(newCustomLoggerName, colorful);
         
         var newName = directName ? moduleName : $"{ModuleName}.{moduleName}";
         

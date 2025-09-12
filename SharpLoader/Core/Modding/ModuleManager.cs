@@ -22,6 +22,9 @@ public class ModuleManager
     public InvokeHelper Helper { get; private set; }
     public IntPtr Jvm { get; private set; }
     
+    private readonly Dictionary<(string, string), Assembly> _loadedAssemblies = new();
+    // private readonly Dictionary<string, Assembly> _loadedAssemblies = new  Dictionary<string, Assembly>(StringComparer.OrdinalIgnoreCase);
+    
     private readonly List<IModule> _loadedModules = new();
     private readonly Dictionary<string, IModule> _namespaceToModuleMap = new();
     private readonly Dictionary<string, List<IModule>> _classModifiers = new();
@@ -38,6 +41,7 @@ public class ModuleManager
         Instance = this;
 
         InitializeMappings();
+        AppDomain.CurrentDomain.AssemblyResolve += CurrentDomainAssemblyResolve;
     }
 
     public void InitializeMappings()
@@ -164,6 +168,29 @@ public class ModuleManager
         return result;
     }
     
+    private Assembly? CurrentDomainAssemblyResolve(object? sender, ResolveEventArgs args)
+    {
+        var assemblyName = new AssemblyName(args.Name).Name;
+        if (assemblyName == null)
+            return null;
+
+        foreach (var kvp in _loadedAssemblies)
+        {
+            var (moduleId, path) = kvp.Key;
+            var assembly = kvp.Value;
+        
+            if (assembly.GetName().Name == assemblyName)
+            {
+                Logger?.Debug($"Resolved assembly: {assemblyName} from module {moduleId} at {path}");
+                return assembly;
+            }
+        }
+
+        Logger?.Warn($"Failed to resolve assembly: {assemblyName}");
+        return null;
+    }
+
+    
     /// <summary>
     /// 加载单个模组
     /// </summary>
@@ -176,7 +203,15 @@ public class ModuleManager
             // 优先加载原生依赖
             foreach (var dependency in profile.NativeDependencies)
             {
-                var _ = LoadAssemblyFromZip(filePath, dependency);
+                Logger?.Info($"Loading dependency: {dependency}");
+                var dependencyAssembly = LoadAssemblyFromZip(filePath, dependency);
+                if (dependencyAssembly == null)
+                {
+                    Logger?.Error($"Failed to load dependency: {dependency}");
+                    throw new Exception($"Assembly '{profile.EntryPoint}' not found in module");
+                }
+                
+                _loadedAssemblies.Add((profile.Id, dependency),  dependencyAssembly);
             }
             
             // 从ZIP文件中加载程序集
@@ -185,6 +220,7 @@ public class ModuleManager
             {
                 throw new FileNotFoundException($"Assembly '{profile.EntryPoint}' not found in module");
             }
+            _loadedAssemblies.Add((profile.Id, profile.EntryPoint),  assembly);
             
             // 查找并实例化IModule实现
             var moduleType = FindModuleType(assembly, profile.MainClass);
@@ -342,6 +378,7 @@ public class ModuleManager
             catch (Exception ex)
             {
                 Logger?.Error($"Error in module {module.GetType().Name} while modifying {className}: {ex.Message}");
+                Logger?.Trace($"Error in module {module.GetType().Name} while modifying {className}: {ex.StackTrace}");
             }
         }
         
