@@ -6,6 +6,8 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <PackageId>SharpMC.SharpLoader</PackageId>
+        <PackageProjectUrl>https://github.com/YELANDAOKONG/SharpLoader2</PackageProjectUrl>
     </PropertyGroup>
 
     <ItemGroup>
