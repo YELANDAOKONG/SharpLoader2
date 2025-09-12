@@ -46,7 +46,7 @@ public class ModuleBase : IModule
     #region Classes
 
     // Low-Level Modify Class
-    public virtual byte[]? ModifyClass(string className, byte[] classData)
+    public virtual byte[]? ModifyClass(string className, byte[]? classData)
     {
         return null;
     }

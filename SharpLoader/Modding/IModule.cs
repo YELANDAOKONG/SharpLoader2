@@ -13,7 +13,7 @@ public interface IModule
     #region Classes
 
     // Low-Level Modify Class
-    byte[]? ModifyClass(string className, byte[] classData)
+    byte[]? ModifyClass(string className, byte[]? classData)
     {
         return null;
     }
