@@ -8,6 +8,7 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <PackageId>SharpMC.SharpLoader</PackageId>
         <PackageProjectUrl>https://github.com/YELANDAOKONG/SharpLoader2</PackageProjectUrl>
+        <Version>1.0.3.0</Version>
     </PropertyGroup>
 
     <ItemGroup>
