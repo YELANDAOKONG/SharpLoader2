@@ -7,18 +7,22 @@ public class ModuleProfile
     public required string Id { get; set; } // Unique Id
     public required string Namespace { get; set; } // Namespace
     public ModuleVersion Version { get; set; } = new ModuleVersion();
+    public List<ModuleVersion> CompatibleVersion { get; set; } = [];
     
     // Code
     public string EntryPoint { get; set; } = "default.dll";
     public string? MainClass { get; set; }
-    public List<string> NativeDependencies { get; set; } = new List<string>();
+    public List<string> NativeDependencies { get; set; } = new();
     
     // Information
     public string? Icon { get; set; }
     public string Title { get; set; } = "Unknown";
     public string? Description { get; set; }
-    public List<string> Authors { get; set; } = new List<string>();
-    public List<string> Urls { get; set; } = new List<string>();
+    public List<string> Authors { get; set; } = new();
+    public List<string> Urls { get; set; } = new();
+    
+    // Dependencies (Id, Version)
+    public Dictionary<string, ModuleVersionRange?> Dependencies { get; set; } = new();
     
     // TODO: Dependency, GameVersion...
 }

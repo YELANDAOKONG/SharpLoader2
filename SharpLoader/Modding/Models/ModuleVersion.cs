@@ -21,6 +21,46 @@ public class ModuleVersion : IComparable<ModuleVersion>, IEquatable<ModuleVersio
         Tag = tag;
     }
 
+    #region Functions
+
+    /// <summary>
+    /// Compares only the Major, Minor, and Patch components of two versions.
+    /// Build and Tag are ignored in this comparison.
+    /// </summary>
+    public int CompareCoreVersionTo(ModuleVersion? other)
+    {
+        if (other is null)
+            return 1;
+        
+        // Compare Major version
+        var majorComparison = Major.CompareTo(other.Major);
+        if (majorComparison != 0)
+            return majorComparison;
+        
+        // Compare Minor version
+        var minorComparison = Minor.CompareTo(other.Minor);
+        if (minorComparison != 0)
+            return minorComparison;
+        
+        // Compare Patch version
+        return Patch.CompareTo(other.Patch);
+    }
+    
+    /// <summary>
+    /// Determines if the core version (Major, Minor, Patch) is equal to another version
+    /// </summary>
+    public bool CoreVersionEquals(ModuleVersion? other)
+    {
+        if (other is null)
+            return false;
+        
+        return Major == other.Major &&
+               Minor == other.Minor &&
+               Patch == other.Patch;
+    }
+
+    #endregion
+
     #region IComparable<ModuleVersion> Implementation
 
     public int CompareTo(ModuleVersion? other)
