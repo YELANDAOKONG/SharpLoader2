@@ -84,6 +84,10 @@ public class ModuleManager
                     if (e.StackTrace != null) Logger?.Trace(e.StackTrace);
                 }
             }
+            else
+            {
+                Logger?.Warn("Mapping format not supported.");
+            }
         }
         else
         {
