@@ -22,5 +22,5 @@ public class ModuleProfile
     public List<string> Urls { get; set; } = new();
     
     // Dependencies (Id, Version)
-    public Dictionary<string, ModuleVersionRange?> Dependencies { get; set; } = new();
+    public List<ModuleDependency> Dependencies { get; set; } = new();
 }
