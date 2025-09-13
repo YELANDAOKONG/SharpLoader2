@@ -92,6 +92,7 @@ public static class Program
                 colorful: string.IsNullOrEmpty(Environment.GetEnvironmentVariable("LOGGER_NOCOLORFUL"))
             ),
             moduleName: Statics.LoggerModuleName,
+            rollingInterval: RollingInterval.Minute,
             writeToFile: true
         );
         AgentLogger = Logger.CreateSubModule("Agent");
