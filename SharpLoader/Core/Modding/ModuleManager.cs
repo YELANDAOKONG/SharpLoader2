@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using SharpLoader.Core.Java;
+using SharpLoader.Core.Minecraft.Mapping.Implements;
 using SharpLoader.Core.Minecraft.Mapping.Implements.Yarn;
 using SharpLoader.Core.Minecraft.Mapping.Models;
 using SharpLoader.Core.Minecraft.Mapping.Utilities;
@@ -30,6 +31,7 @@ public class ModuleManager
     private readonly Dictionary<string, IModule> _namespaceToModuleMap = new();
     private readonly Dictionary<string, List<IModule>> _classModifiers = new();
 
+    public MappingType MappingType { get; set; }
     public bool PrintMapping { get; set; } = false;
     public MappingSet Mapping { get; private set; } = new();
     
@@ -62,6 +64,7 @@ public class ModuleManager
 
     public void InitializeMappings()
     {
+        MappingType = MappingType.None;
         var type = Environment.GetEnvironmentVariable("MAPPING");
         var path = Environment.GetEnvironmentVariable("MAPPINGS");
         if (!string.IsNullOrEmpty(type) && !string.IsNullOrEmpty(path))
@@ -72,6 +75,7 @@ public class ModuleManager
                 {
                     Logger?.Info("Loading Yarn Mappings...");
                     LoadYarnMappings(path);
+                    MappingType = MappingType.Yarn;
                     Logger?.Info($"Loaded Yarn Mappings ({Mapping.Classes.Count} Classes, {Mapping.InnerClasses.Count} InnerClasses)");
                 }
                 catch (Exception e)
