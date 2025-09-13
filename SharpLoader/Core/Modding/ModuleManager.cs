@@ -142,6 +142,8 @@ public class ModuleManager
             catch (Exception ex)
             {
                 Logger?.Error($"Failed to load module {profile.Id}: {ex.Message}");
+                Logger?.Trace($"Failed to load module {profile.Id}: {ex.StackTrace}");
+                throw;
             }
         }
         
