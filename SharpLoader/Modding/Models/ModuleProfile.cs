@@ -23,6 +23,4 @@ public class ModuleProfile
     
     // Dependencies (Id, Version)
     public Dictionary<string, ModuleVersionRange?> Dependencies { get; set; } = new();
-    
-    // TODO: Dependency, GameVersion...
 }
