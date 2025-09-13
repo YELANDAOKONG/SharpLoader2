@@ -124,16 +124,19 @@ public class ModuleManager
     public void LoadAllModules(string modulesDirectory)
     {
         Logger?.Info($"Searching for modules in: {modulesDirectory}");
-        
+    
         // 发现所有模组
         var discoveredModules = ModuleDiscoverer.SearchModules(modulesDirectory, Logger);
         Logger?.Info($"Found {discoveredModules.Count} module(s)");
-        
+    
         // 处理冲突
         var modulesToLoad = ResolveConflicts(discoveredModules);
-        
-        // 加载模组
-        foreach (var (filePath, profile) in modulesToLoad)
+    
+        // 解析依赖关系
+        var modulesInOrder = ResolveDependencies(modulesToLoad);
+    
+        // 按照依赖顺序加载模组
+        foreach (var (filePath, profile) in modulesInOrder)
         {
             try
             {
@@ -143,12 +146,12 @@ public class ModuleManager
             {
                 Logger?.Error($"Failed to load module {profile.Id}: {ex.Message}");
                 Logger?.Trace($"Failed to load module {profile.Id}: {ex.StackTrace}");
-                throw;
             }
         }
-        
+    
         Logger?.Info($"Successfully loaded {LoadedModules.Count} module(s)");
     }
+
     
     /// <summary>
     /// 解决模组冲突
@@ -194,17 +197,65 @@ public class ModuleManager
         return result;
     }
     
+    private List<(string, ModuleProfile)> ResolveDependencies(List<(string, ModuleProfile)> modules)
+    {
+        var resolver = new ModuleDependencyResolver(Logger);
+    
+        try
+        {
+            var result = resolver.ResolveDependencies(modules, out var missingDeps, out var versionMismatches);
+        
+            // 报告缺失的依赖
+            if (missingDeps.Any())
+            {
+                Logger?.Error($"Missing dependencies:");
+                foreach (var dep in missingDeps)
+                {
+                    Logger?.Error($"  - {dep}");
+                }
+            }
+        
+            // 报告版本不匹配的依赖
+            if (versionMismatches.Any())
+            {
+                Logger?.Error($"Version mismatches:");
+                foreach (var mismatch in versionMismatches)
+                {
+                    Logger?.Error($"  - {mismatch}");
+                }
+            }
+        
+            // 如果有缺失或版本不匹配的依赖，抛出异常
+            if (missingDeps.Any() || versionMismatches.Any())
+            {
+                throw new Exception("Dependency resolution failed due to missing or incompatible dependencies");
+            }
+        
+            return result;
+        }
+        catch (Exception ex)
+        {
+            Logger?.Error($"Dependency resolution failed: {ex.Message}");
+            throw;
+        }
+    }
+    
     private Assembly? CurrentDomainAssemblyResolve(object? sender, ResolveEventArgs args)
     {
         var assemblyName = new AssemblyName(args.Name).Name;
         if (assemblyName == null)
             return null;
 
+        if (assemblyName.EndsWith(".resources"))
+        {
+            return null;
+        }
+
         foreach (var kvp in LoadedAssemblies)
         {
             var (moduleId, path) = kvp.Key;
             var assembly = kvp.Value;
-        
+    
             if (assembly.GetName().Name == assemblyName)
             {
                 Logger?.Debug($"Resolved assembly: {assemblyName} from module {moduleId} at {path}");
