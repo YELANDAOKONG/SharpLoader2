@@ -24,11 +24,11 @@ public class ModuleManager
     public InvokeHelper Helper { get; private set; }
     public IntPtr Jvm { get; private set; }
     
-    private readonly Dictionary<(string, string), Assembly> _loadedAssemblies = new();
+    public readonly Dictionary<(string, string), Assembly> LoadedAssemblies = new();
     // private readonly Dictionary<string, Assembly> _loadedAssemblies = new  Dictionary<string, Assembly>(StringComparer.OrdinalIgnoreCase);
     
-    private readonly List<IModule> _loadedModules = new();
-    private readonly Dictionary<string, IModule> _namespaceToModuleMap = new();
+    public readonly List<IModule> LoadedModules = new();
+    public readonly Dictionary<string, IModule> NamespaceToModuleMap = new();
     private readonly Dictionary<string, List<IModule>> _classModifiers = new();
 
     public MappingType MappingType { get; set; }
@@ -141,7 +141,7 @@ public class ModuleManager
             }
         }
         
-        Logger?.Info($"Successfully loaded {_loadedModules.Count} module(s)");
+        Logger?.Info($"Successfully loaded {LoadedModules.Count} module(s)");
     }
     
     /// <summary>
@@ -194,7 +194,7 @@ public class ModuleManager
         if (assemblyName == null)
             return null;
 
-        foreach (var kvp in _loadedAssemblies)
+        foreach (var kvp in LoadedAssemblies)
         {
             var (moduleId, path) = kvp.Key;
             var assembly = kvp.Value;
@@ -231,7 +231,7 @@ public class ModuleManager
                     throw new Exception($"Assembly '{profile.EntryPoint}' not found in module");
                 }
                 
-                _loadedAssemblies.Add((profile.Id, dependency),  dependencyAssembly);
+                LoadedAssemblies.Add((profile.Id, dependency),  dependencyAssembly);
             }
             
             // 从ZIP文件中加载程序集
@@ -240,7 +240,7 @@ public class ModuleManager
             {
                 throw new FileNotFoundException($"Assembly '{profile.EntryPoint}' not found in module");
             }
-            _loadedAssemblies.Add((profile.Id, profile.EntryPoint),  assembly);
+            LoadedAssemblies.Add((profile.Id, profile.EntryPoint),  assembly);
             
             // 查找并实例化IModule实现
             var moduleType = FindModuleType(assembly, profile.MainClass);
@@ -282,8 +282,8 @@ public class ModuleManager
             module.Initialize(this, ModulesLogger?.CreateSubModule(profile.Id, false));
             
             // 注册模组
-            _loadedModules.Add(module);
-            _namespaceToModuleMap[profile.Namespace] = module;
+            LoadedModules.Add(module);
+            NamespaceToModuleMap[profile.Namespace] = module;
             
             Logger?.Info($"Successfully loaded module: {profile.Id} v{profile.Version}");
         }
@@ -372,7 +372,7 @@ public class ModuleManager
         // 简单实现：所有模组都有机会修改任何类
         // 实际实现中可以根据类名进行过滤
         // TODO...
-        return _loadedModules.Any(m => m.ModifyClass(className, Array.Empty<byte>()) != null);
+        return LoadedModules.Any(m => m.ModifyClass(className, Array.Empty<byte>()) != null);
     }
     
     /// <summary>
@@ -383,7 +383,7 @@ public class ModuleManager
         byte[] currentData = classfileBuffer;
         bool modified = false;
         
-        foreach (var module in _loadedModules)
+        foreach (var module in LoadedModules)
         {
             try
             {
