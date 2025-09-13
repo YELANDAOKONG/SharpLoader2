@@ -21,6 +21,11 @@ public class ModuleBase : IModule
         Invoker = helper;
         Handle = jvm;
         Java = new Java(helper, jvm);
+        return OnSetup(helper, jvm, pEnv);
+    }
+
+    public bool OnSetup(InvokeHelper helper, IntPtr jvm, IntPtr pEnv)
+    {
         return true;
     }
 
