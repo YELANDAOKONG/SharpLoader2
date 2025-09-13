@@ -8,7 +8,12 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <PackageId>SharpMC.SharpLoader</PackageId>
         <PackageProjectUrl>https://github.com/YELANDAOKONG/SharpLoader2</PackageProjectUrl>
-        <Version>1.0.3.0</Version>
+        <Version>1.0.3.1</Version>
+        <Title>SharpLoader</Title>
+        <Authors>YELANDAOKONG</Authors>
+        <Description>A Minecraft Mod Loader (C#)</Description>
+        <RepositoryUrl>https://github.com/YELANDAOKONG/SharpLoader2</RepositoryUrl>
+        <PackageLicenseUrl>https://raw.githubusercontent.com/YELANDAOKONG/SharpLoader2/refs/heads/master/LICENSE</PackageLicenseUrl>
     </PropertyGroup>
 
     <ItemGroup>
