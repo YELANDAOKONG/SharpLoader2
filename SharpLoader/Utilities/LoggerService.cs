@@ -15,10 +15,12 @@ public class LoggerService
     
     private readonly bool _writeToFile;
     private readonly ILoggerFactory? _loggerFactory;
+    private readonly RollingInterval  _rollingInterval;
     
-    public LoggerService(string? logFilePath = null, ICustomLogger? logger = null, string? moduleName = null, ILoggerFactory? loggerFactory = null, bool writeToFile = true)
+    public LoggerService(string? logFilePath = null, ICustomLogger? logger = null, string? moduleName = null, RollingInterval? rollingInterval = null, ILoggerFactory? loggerFactory = null, bool writeToFile = true)
     {
         _writeToFile = writeToFile;
+        _rollingInterval = rollingInterval ?? RollingInterval.Infinite;
         LogFilePath = logFilePath;
         ModuleName = moduleName ?? "Application";
         
@@ -33,7 +35,7 @@ public class LoggerService
         
         Logger = logger ?? new ConsoleCustomLogger(ModuleName, true); // "APP"
         
-        _loggerFactory = loggerFactory ?? CreateDefaultLoggerFactory(logFilePath);
+        _loggerFactory = loggerFactory ?? CreateDefaultLoggerFactory(logFilePath, rollingInterval ?? RollingInterval.Infinite);
         // Logging = _loggerFactory.CreateLogger<LoggerService>();
         Logging = _loggerFactory.CreateLogger(ModuleName);
     }
@@ -69,7 +71,7 @@ public class LoggerService
         return _loggerFactory?.CreateLogger(categoryName) ?? Logging;
     }
     
-    public static ILoggerFactory CreateDefaultLoggerFactory(string? logFilePath)
+    public static ILoggerFactory CreateDefaultLoggerFactory(string? logFilePath, RollingInterval rollingInterval = RollingInterval.Infinite)
     {
         return LoggerFactory.Create(builder =>
         {
@@ -79,8 +81,8 @@ public class LoggerService
                 var serilogLogger = new LoggerConfiguration()
                     .MinimumLevel.Information()
                     .WriteTo.File(logFilePath, 
-                        rollingInterval: RollingInterval.Day,
-                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level}] [{SourceContext}] {Message}{NewLine}{Exception}")
+                        rollingInterval: rollingInterval,
+                        outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff}] [{Level}] [{SourceContext}] {Message}{NewLine}{Exception}")
                     .CreateLogger();
                     
                 builder.AddSerilog(serilogLogger, dispose: true);
@@ -92,9 +94,9 @@ public class LoggerService
         });
     }
     
-    private Microsoft.Extensions.Logging.ILogger CreateDefaultMicrosoftLogger(string? logFilePath)
+    private Microsoft.Extensions.Logging.ILogger CreateDefaultMicrosoftLogger(string? logFilePath, RollingInterval rollingInterval = RollingInterval.Infinite)
     {
-        var factory = CreateDefaultLoggerFactory(logFilePath);
+        var factory = CreateDefaultLoggerFactory(logFilePath, rollingInterval);
         return factory.CreateLogger<LoggerService>();
     }
     
